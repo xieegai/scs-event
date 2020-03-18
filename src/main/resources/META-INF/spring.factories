@@ -1,0 +1,1 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=org.baihe.scs.event.config.EventAgentConfiguration
