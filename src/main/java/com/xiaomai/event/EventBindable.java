@@ -19,7 +19,6 @@ package com.xiaomai.event;
 
 import com.xiaomai.event.config.EventBindingBeansRegistrar;
 import com.xiaomai.event.utils.EventBindingUtils;
-import net.logstash.logback.encoder.org.apache.commons.lang.StringUtils;
 import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,6 +39,7 @@ import org.springframework.cloud.stream.binding.SubscribableChannelBindingTarget
 import org.springframework.cloud.stream.internal.InternalPropertyNames;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
+import org.springframework.util.StringUtils;
 
 /**
  * The bindable proxy of the event.
@@ -158,7 +158,7 @@ public class EventBindable implements InitializingBean, Bindable {
     @Override
     public void afterPropertiesSet() throws Exception {
         String inputChannelName = EventBindingUtils.resolveInputBindingName(eventPayloadClass);
-        if (StringUtils.isNotBlank(channel)) {
+        if (StringUtils.hasText(channel)) {
             inputChannelName = EventBindingUtils
                 .composeEventChannelBeanName(inputChannelName, channel);
         }
@@ -175,7 +175,7 @@ public class EventBindable implements InitializingBean, Bindable {
         // For OUTPUT we need configure both output & input channel
         String outputChannelName = EventBindingUtils
           .resolveOutputBindingName(eventPayloadClass);
-        if (StringUtils.isNotBlank(channel)) {
+        if (StringUtils.hasText(channel)) {
             outputChannelName = EventBindingUtils
               .composeEventChannelBeanName(outputChannelName, channel);
         }

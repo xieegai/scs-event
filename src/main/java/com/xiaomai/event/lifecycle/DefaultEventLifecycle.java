@@ -34,8 +34,8 @@
 
 package com.xiaomai.event.lifecycle;
 
+import com.xiaomai.event.utils.StructuredArguments;
 import lombok.extern.slf4j.Slf4j;
-import net.logstash.logback.argument.StructuredArguments;
 
 import java.util.Map;
 
@@ -69,15 +69,17 @@ public class DefaultEventLifecycle implements IEventLifecycle {
     @Override
     public void onSucess(String eventSeq, Class<?> payloadClass) {
         log.info("Mark event {}, {} committed",
-        StructuredArguments.keyValue("eventId", eventSeq),
-        StructuredArguments.keyValue("eventPayloadClass", payloadClass.getName()));
+                StructuredArguments.keyValue("eventId", eventSeq),
+                StructuredArguments.keyValue("eventPayloadClass", payloadClass.getName()));
     }
 
     @Override
     public void onFail(String eventSeq, Class<?> payloadClass, Exception e) {
         log.info("Mark event {}, {} failed, {}",
-        StructuredArguments.keyValue("eventId", eventSeq),
-        StructuredArguments.keyValue("eventPayloadClass", payloadClass.getName()),
-        StructuredArguments.keyValue("reason", e.getMessage()));
+                StructuredArguments.keyValue("eventId", eventSeq),
+                StructuredArguments.keyValue("eventPayloadClass", payloadClass.getName()),
+                StructuredArguments.keyValue("reason", e.getMessage()));
     }
+
+
 }

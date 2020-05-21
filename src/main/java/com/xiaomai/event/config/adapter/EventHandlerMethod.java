@@ -19,8 +19,8 @@ package com.xiaomai.event.config.adapter;
 
 import com.xiaomai.event.constant.EventBuiltinAttr;
 import com.xiaomai.event.lifecycle.IEventLifecycle;
+import com.xiaomai.event.utils.StructuredArguments;
 import lombok.extern.slf4j.Slf4j;
-import net.logstash.logback.argument.StructuredArguments;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.handler.invocation.InvocableHandlerMethod;

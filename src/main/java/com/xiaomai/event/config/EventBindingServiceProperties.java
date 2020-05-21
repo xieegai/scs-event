@@ -39,7 +39,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.xiaomai.event.annotation.EventHandler;
 import com.xiaomai.event.constant.EventBuiltinAttr;
 import lombok.extern.slf4j.Slf4j;
-import net.logstash.logback.encoder.org.apache.commons.lang.StringUtils;
 import com.xiaomai.event.annotation.EventConf;
 import com.xiaomai.event.utils.EventBindingUtils;
 import org.springframework.beans.BeanUtils;
@@ -51,6 +50,7 @@ import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.util.StringUtils;
 
 @ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)
@@ -84,7 +84,7 @@ public class EventBindingServiceProperties extends BindingServiceProperties {
 
         EventConf eventConf = EventBindingUtils.getEventConf(eventPayloadClass);
         if (eventConf != null) {
-            if (StringUtils.isNotBlank(eventConf.binder())) {
+            if (StringUtils.hasText(eventConf.binder())) {
                 bindingProperties.setBinder(eventConf.binder());
             }
         }
@@ -92,7 +92,7 @@ public class EventBindingServiceProperties extends BindingServiceProperties {
         EventHandler eventHandler = EventBindingUtils.getEventConsumerConf(eventPayloadClass);
 
         // Customize the consumer group
-        if (eventHandler != null && StringUtils.isNotBlank(eventHandler.group())) {
+        if (eventHandler != null && StringUtils.hasText(eventHandler.group())) {
             bindingProperties.setGroup(eventHandler.group());
         } else {
             bindingProperties.setGroup(appName);
