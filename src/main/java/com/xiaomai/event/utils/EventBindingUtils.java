@@ -144,9 +144,11 @@ public abstract class EventBindingUtils {
                     continue;
                 }
                 final String channelBeanName = bindableBeanName + "#" + channel;
+                final String channelBindingName = EventBindingUtils.composeEventChannelBeanName(bindingName, channel);
+
                 // register the factory bean to produce the binding target bean
-                RootBeanDefinition rootBeanDefinition = buildBindingBeanDefinition(channelBeanName, qualifier, bindingName);
-                registry.registerBeanDefinition(EventBindingUtils.composeEventChannelBeanName(bindingName, channel), rootBeanDefinition);
+                RootBeanDefinition rootBeanDefinition = buildBindingBeanDefinition(channelBeanName, qualifier, channelBindingName);
+                registry.registerBeanDefinition(channelBeanName, rootBeanDefinition);
 
                 // register the factory bean to produce the binding target bean
                 RootBeanDefinition factoryBeanDefinition = buildBindingFactoryBeanDefinition(eventPayloadClass, channel, parentClass);
