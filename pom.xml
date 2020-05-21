@@ -8,7 +8,7 @@
         <version>2.0.7.RELEASE</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.jiejing.scs.event</groupId>
+    <groupId>com.jiejing.event</groupId>
     <artifactId>scs-event</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>scs-event</name>
