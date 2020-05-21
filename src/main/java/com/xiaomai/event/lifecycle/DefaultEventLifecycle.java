@@ -32,7 +32,7 @@
  * along with scs-event.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.jiejing.scs.event.lifecycle;
+package com.xiaomai.event.lifecycle;
 
 import lombok.extern.slf4j.Slf4j;
 import net.logstash.logback.argument.StructuredArguments;

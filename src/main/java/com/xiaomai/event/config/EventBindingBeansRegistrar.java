@@ -32,10 +32,10 @@
  * along with scs-event.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.jiejing.scs.event.config;
+package com.xiaomai.event.config;
 
-import com.jiejing.scs.event.annotation.EnableEvents;
-import com.jiejing.scs.event.utils.EventBindingUtils;
+import com.xiaomai.event.annotation.EnableEvents;
+import com.xiaomai.event.utils.EventBindingUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;

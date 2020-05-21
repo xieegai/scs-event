@@ -32,16 +32,16 @@
  * along with scs-event.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.jiejing.scs.event.config;
+package com.xiaomai.event.config;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.jiejing.scs.event.annotation.EventHandler;
-import com.jiejing.scs.event.constant.EventBuiltinAttr;
+import com.xiaomai.event.annotation.EventHandler;
+import com.xiaomai.event.constant.EventBuiltinAttr;
 import lombok.extern.slf4j.Slf4j;
 import net.logstash.logback.encoder.org.apache.commons.lang.StringUtils;
-import com.jiejing.scs.event.annotation.EventConf;
-import com.jiejing.scs.event.utils.EventBindingUtils;
+import com.xiaomai.event.annotation.EventConf;
+import com.xiaomai.event.utils.EventBindingUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;

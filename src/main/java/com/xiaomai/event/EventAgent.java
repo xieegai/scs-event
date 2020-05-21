@@ -32,13 +32,13 @@
  * along with scs-event.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.jiejing.scs.event;
+package com.xiaomai.event;
 
 import com.google.common.collect.Lists;
-import com.jiejing.scs.event.annotation.EventMeta;
-import com.jiejing.scs.event.constant.EventBuiltinAttr;
-import com.jiejing.scs.event.lifecycle.IEventLifecycle;
-import com.jiejing.scs.event.utils.EventBindingUtils;
+import com.xiaomai.event.annotation.EventMeta;
+import com.xiaomai.event.constant.EventBuiltinAttr;
+import com.xiaomai.event.lifecycle.IEventLifecycle;
+import com.xiaomai.event.utils.EventBindingUtils;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;

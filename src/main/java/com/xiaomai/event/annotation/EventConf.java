@@ -1,4 +1,4 @@
-package com.jiejing.scs.event.annotation;
+package com.xiaomai.event.annotation;
 
 /**
  * @author baihe

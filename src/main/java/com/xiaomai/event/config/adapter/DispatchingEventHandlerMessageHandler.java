@@ -15,7 +15,7 @@
  * along with scs-event.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.jiejing.scs.event.config.adapter;
+package com.xiaomai.event.config.adapter;
 
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;

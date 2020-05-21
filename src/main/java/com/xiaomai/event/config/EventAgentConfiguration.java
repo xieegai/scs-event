@@ -32,51 +32,35 @@
  * along with scs-event.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.jiejing.scs.event.annotation;
+package com.xiaomai.event.config;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import com.xiaomai.event.lifecycle.DefaultEventLifecycle;
+import com.xiaomai.event.lifecycle.IEventLifecycle;
+import com.xiaomai.event.EventAgentFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
- * The event define annotation to mark some meta info on event payload class
- *
- * note: we wanna support partition-strategy param here at first. But finally
- * we found it can be based on the hash-code of payload instance. If you want
- * to adjust the dispatch partition-strategy of event payload, you should
- * override the hashcode function of the payload class, e.g., using the Lombok
- * {@link lombok.EqualsAndHashCode} Annotation.
- *
  * @author baihe
- * Created on 2020-03-20
+ * date: 2017/11/24
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-public @interface EventMeta {
+@Configuration
+@Slf4j
+public class EventAgentConfiguration {
+    @Bean
+    public EventAgentFactory eventAgentFactory(IEventLifecycle eventLifecycle, BinderAwareChannelResolver resolver) {
+        EventAgentFactory agentFactory = new EventAgentFactory(eventLifecycle, resolver);
+        EventAgentFactory.setInstacne(agentFactory);
+        return agentFactory;
+    }
 
-	/**
-	 * The name of the event
-	 */
-	String name();
-
-	/**
-	 * The description of the event
-	 */
-	String description();
-
-	/**
-	 * The domain of the event, if not blank, the event key will be as <domain>.<name>
-	 */
-	String domain() default "";
-
-	/**
-	 * The partition key based on attributes
-	 */
-	String[] partitionOn() default {};
-
-	boolean idempotent() default false;
-
+    @Bean
+    @ConditionalOnMissingBean
+    public IEventLifecycle eventLifecycle() {
+        log.warn("*NO* bean of IEventLifecycle provided, use {} ...", DefaultEventLifecycle.class.getName());
+        return new DefaultEventLifecycle();
+    }
 }

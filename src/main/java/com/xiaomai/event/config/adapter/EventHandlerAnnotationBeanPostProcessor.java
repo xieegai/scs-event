@@ -32,11 +32,11 @@
  * along with scs-event.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.jiejing.scs.event.config.adapter;
+package com.xiaomai.event.config.adapter;
 
-import com.jiejing.scs.event.annotation.EventHandler;
-import com.jiejing.scs.event.utils.EventBindingUtils;
-import com.jiejing.scs.event.utils.EventHandlerMethodUtils;
+import com.xiaomai.event.annotation.EventHandler;
+import com.xiaomai.event.utils.EventBindingUtils;
+import com.xiaomai.event.utils.EventHandlerMethodUtils;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;

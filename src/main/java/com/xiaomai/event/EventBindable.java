@@ -15,10 +15,10 @@
  * along with scs-event.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.jiejing.scs.event;
+package com.xiaomai.event;
 
-import com.jiejing.scs.event.config.EventBindingBeansRegistrar;
-import com.jiejing.scs.event.utils.EventBindingUtils;
+import com.xiaomai.event.config.EventBindingBeansRegistrar;
+import com.xiaomai.event.utils.EventBindingUtils;
 import net.logstash.logback.encoder.org.apache.commons.lang.StringUtils;
 import com.google.common.collect.Sets;
 import java.util.ArrayList;

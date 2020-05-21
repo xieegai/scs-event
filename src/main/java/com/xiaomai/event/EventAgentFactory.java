@@ -15,9 +15,9 @@
  * along with scs-event.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.jiejing.scs.event;
+package com.xiaomai.event;
 
-import com.jiejing.scs.event.lifecycle.IEventLifecycle;
+import com.xiaomai.event.lifecycle.IEventLifecycle;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;

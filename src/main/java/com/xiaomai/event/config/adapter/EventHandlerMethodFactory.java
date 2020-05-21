@@ -32,9 +32,9 @@
  * along with scs-event.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.jiejing.scs.event.config.adapter;
+package com.xiaomai.event.config.adapter;
 
-import com.jiejing.scs.event.lifecycle.IEventLifecycle;
+import com.xiaomai.event.lifecycle.IEventLifecycle;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolver;
 import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolverComposite;

@@ -32,27 +32,36 @@
  * along with scs-event.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.jiejing.scs.event.lifecycle;
+package com.xiaomai.event.annotation;
 
+import org.springframework.messaging.handler.annotation.MessageMapping;
 
-
-import com.jiejing.scs.event.annotation.EventMeta;
-import java.util.Map;
+import java.lang.annotation.*;
 
 /**
- * Created by baihe on 2017/8/22.
+ * @author baihe
  */
-public interface IEventLifecycle {
+@Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+@MessageMapping
+@Documented
+public @interface EventHandler {
+	Class<?> value();
 
-    default EventMeta getEventMeta(Class<?> payloadClass) {
-        return payloadClass.getDeclaredAnnotation(EventMeta.class);
-    }
+	String condition() default "";
 
-    String onTrigger(Object payload, Map<String, Object> eventAttrs);
+	String copyHeaders() default "true";
 
-    boolean onExecute(String eventSeq, Class<?> payloadClass);
+	/**
+	 * 该事件的消费组
+	 * 默认为空，使用${spring.application.name}
+	 */
+	String group() default "";
 
-    void onSucess(String eventSeq, Class<?> payloadClass);
+	String[] channels() default {};
 
-    void onFail(String eventSeq, Class<?> payloadClass, Exception e);
+	int concurrency() default 1;
+
+	int maxAttempts() default 3;
+
 }

@@ -32,11 +32,11 @@
  * along with scs-event.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.jiejing.scs.event.config;
+package com.xiaomai.event.config;
 
-import com.jiejing.scs.event.config.adapter.EventHandlerAnnotationBeanPostProcessor;
-import com.jiejing.scs.event.config.adapter.EventHandlerMethodFactory;
-import com.jiejing.scs.event.lifecycle.IEventLifecycle;
+import com.xiaomai.event.config.adapter.EventHandlerAnnotationBeanPostProcessor;
+import com.xiaomai.event.config.adapter.EventHandlerMethodFactory;
+import com.xiaomai.event.lifecycle.IEventLifecycle;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

@@ -15,12 +15,12 @@
  * along with scs-event.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.jiejing.scs.event.utils;
+package com.xiaomai.event.utils;
 
-import com.jiejing.scs.event.annotation.EventHandler;
-import com.jiejing.scs.event.annotation.EventMeta;
-import com.jiejing.scs.event.EventBindable;
-import com.jiejing.scs.event.annotation.EventConf;
+import com.xiaomai.event.annotation.EventHandler;
+import com.xiaomai.event.annotation.EventMeta;
+import com.xiaomai.event.EventBindable;
+import com.xiaomai.event.annotation.EventConf;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.AutowireCandidateQualifier;

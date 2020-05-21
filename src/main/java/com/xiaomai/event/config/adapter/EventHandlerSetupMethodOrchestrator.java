@@ -32,9 +32,9 @@
  * along with scs-event.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.jiejing.scs.event.config.adapter;
+package com.xiaomai.event.config.adapter;
 
-import com.jiejing.scs.event.annotation.EventHandler;
+import com.xiaomai.event.annotation.EventHandler;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.binding.StreamListenerErrorMessages;

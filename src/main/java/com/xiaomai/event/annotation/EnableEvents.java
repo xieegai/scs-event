@@ -49,11 +49,11 @@
  * along with scs-event.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.jiejing.scs.event.annotation;
+package com.xiaomai.event.annotation;
 
-import com.jiejing.scs.event.config.EventAgentConfiguration;
-import com.jiejing.scs.event.config.EventBindingBeansRegistrar;
-import com.jiejing.scs.event.config.EventBindingConfiguration;
+import com.xiaomai.event.config.EventAgentConfiguration;
+import com.xiaomai.event.config.EventBindingBeansRegistrar;
+import com.xiaomai.event.config.EventBindingConfiguration;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
