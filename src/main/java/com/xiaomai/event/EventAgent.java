@@ -34,7 +34,10 @@
 
 package com.xiaomai.event;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.xiaomai.event.annotation.EventConf;
 import com.xiaomai.event.annotation.EventMeta;
 import com.xiaomai.event.constant.EventBuiltinAttr;
 import com.xiaomai.event.lifecycle.IEventLifecycle;
@@ -46,6 +49,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ReflectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -152,6 +156,11 @@ public class EventAgent<T> {
         };
 
         String simpleBindingName = EventBindingUtils.resolveOutputBindingName(payloadClass);
+        if (StringUtils.hasText(channel)) {
+            EventConf eventConf = EventBindingUtils.getEventConf(payloadClass);
+            Assert.state(!(null == eventConf || eventConf.produceChannels().length == 0
+              || !Sets.newHashSet(eventConf.produceChannels()).contains(channel)), "channel not registered to trigger event");
+        }
         MessageChannel messageChannel = resolver.resolveDestination(
             EventBindingUtils.composeEventChannelBeanName(simpleBindingName, channel));
         messageChannel.send(MessageBuilder.createMessage(payload, new MessageHeaders(eventHeaders)));
