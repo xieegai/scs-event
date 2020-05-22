@@ -17,9 +17,11 @@
 
 package com.xiaomai.event;
 
-import com.xiaomai.event.config.EventBindingBeansRegistrar;
-import com.xiaomai.event.utils.EventBindingUtils;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.xiaomai.event.config.EventBindingBeansRegistrar;
+import com.xiaomai.event.enums.EventBindingType;
+import com.xiaomai.event.utils.EventBindingUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -53,6 +55,10 @@ public class EventBindable implements InitializingBean, Bindable {
 
     private final String channel;
 
+    private boolean enableInput;
+
+    private boolean enableOutput;
+
     private BoundTargetHolder inputHolder = null;
 
     private BoundTargetHolder outputHolder = null;
@@ -67,33 +73,49 @@ public class EventBindable implements InitializingBean, Bindable {
      * CONSTRUCTOR
      * @param eventPayloadClass the event payload class
      */
-    public EventBindable(Class<?> eventPayloadClass, String channel) {
+    public EventBindable(Class<?> eventPayloadClass, EventBindingType eventBindingType, String channel) {
         this.eventPayloadClass = eventPayloadClass;
         this.channel = channel;
+        if (EventBindingType.INPUT.equals(eventBindingType)) {
+            this.enableInput = true;
+            this.enableOutput = false;
+        } else if (EventBindingType.OUTPUT.equals(eventBindingType)) {
+            this.enableInput = false;
+            this.enableOutput = true;
+        } else {
+            this.enableInput = true;
+            this.enableOutput = true;
+        }
     }
 
     /**
      * Retrieve the output message channel bean.
      * Used as the *FACTORY* method of output message channel bean,
      * see {@link EventBindingBeansRegistrar#registerBeanDefinitions}
-     * and {@link EventBindingUtils#registerInputBindingTargetBeanDefinition}.
+     * and {@link EventBindingUtils#registerEventBindingBeanDefinitions}.
      * 
      * @return the output message channel
      */
     public final MessageChannel output() {
-        return (MessageChannel) outputHolder.getBoundTarget();
+        if (enableOutput && null != this.outputHolder) {
+            return (MessageChannel) outputHolder.getBoundTarget();
+        }
+        return null;
     }
 
     /**
      * Retrieve the input message channel bean.
      * Used as the *FACTORY* method of input message channel bean,
      * see {@link EventBindingBeansRegistrar#registerBeanDefinitions}
-     * and {@link EventBindingUtils#registerInputBindingTargetBeanDefinition}.
+     * and {@link EventBindingUtils#registerEventBindingBeanDefinitions}.
      *
      * @return the input message channel
      */
     public final SubscribableChannel input() {
-        return (SubscribableChannel) inputHolder.getBoundTarget();
+        if (enableInput && null != this.inputHolder) {
+            return (SubscribableChannel) inputHolder.getBoundTarget();
+        }
+        return null;
     }
 
     /**
@@ -153,40 +175,42 @@ public class EventBindable implements InitializingBean, Bindable {
 
     /**
      * The **POST** constructor process to init the binding targets
-     * @throws Exception the possible exception
      */
     @Override
-    public void afterPropertiesSet() throws Exception {
-        String inputChannelName = EventBindingUtils.resolveInputBindingName(eventPayloadClass);
-        if (StringUtils.hasText(channel)) {
-            inputChannelName = EventBindingUtils
-                .composeEventChannelBeanName(inputChannelName, channel);
-        }
-        Object sharedBindingInputTarget = locateSharedBindingTarget(inputChannelName,
-            SubscribableChannel.class);
-        if (sharedBindingInputTarget != null) {
-            inputHolder = new BoundTargetHolder(inputChannelName, sharedBindingInputTarget,
-                false);
-        } else {
-            inputHolder = new BoundTargetHolder(inputChannelName,
-                eventChannelBindingTargetFactory.createInput(inputChannelName), true);
+    public void afterPropertiesSet() {
+        if (enableInput) {
+            String inputChannelName = EventBindingUtils.resolveInputBindingName(eventPayloadClass);
+            if (StringUtils.hasText(channel)) {
+                inputChannelName = EventBindingUtils
+                    .composeEventChannelBeanName(inputChannelName, channel);
+            }
+            Object sharedBindingInputTarget = locateSharedBindingTarget(inputChannelName,
+                SubscribableChannel.class);
+            if (sharedBindingInputTarget != null) {
+                inputHolder = new BoundTargetHolder(inputChannelName, sharedBindingInputTarget,
+                    false);
+            } else {
+                inputHolder = new BoundTargetHolder(inputChannelName,
+                    eventChannelBindingTargetFactory.createInput(inputChannelName), true);
+            }
         }
 
-        // For OUTPUT we need configure both output & input channel
-        String outputChannelName = EventBindingUtils
-          .resolveOutputBindingName(eventPayloadClass);
-        if (StringUtils.hasText(channel)) {
-            outputChannelName = EventBindingUtils
-              .composeEventChannelBeanName(outputChannelName, channel);
-        }
-        Object sharedBindingOutputTarget = locateSharedBindingTarget(outputChannelName,
-          MessageChannel.class);
-        if (sharedBindingOutputTarget != null) {
-            outputHolder = new BoundTargetHolder(outputChannelName, sharedBindingOutputTarget,
-              false);
-        } else {
-            outputHolder = new BoundTargetHolder(outputChannelName,
-              eventChannelBindingTargetFactory.createOutput(outputChannelName), true);
+        if (enableOutput) {
+            String outputChannelName = EventBindingUtils
+                .resolveOutputBindingName(eventPayloadClass);
+            if (StringUtils.hasText(channel)) {
+                outputChannelName = EventBindingUtils
+                    .composeEventChannelBeanName(outputChannelName, channel);
+            }
+            Object sharedBindingOutputTarget = locateSharedBindingTarget(outputChannelName,
+                MessageChannel.class);
+            if (sharedBindingOutputTarget != null) {
+                outputHolder = new BoundTargetHolder(outputChannelName, sharedBindingOutputTarget,
+                    false);
+            } else {
+                outputHolder = new BoundTargetHolder(outputChannelName,
+                    eventChannelBindingTargetFactory.createOutput(outputChannelName), true);
+            }
         }
     }
 
@@ -196,7 +220,9 @@ public class EventBindable implements InitializingBean, Bindable {
     @Override
     @Deprecated
     public void bindInputs(BindingService bindingService) {
-        this.createAndBindInputs(bindingService);
+        if (enableInput) {
+            this.createAndBindInputs(bindingService);
+        }
     }
 
     /**
@@ -207,18 +233,20 @@ public class EventBindable implements InitializingBean, Bindable {
     @Override
     public Collection<Binding<Object>> createAndBindInputs(BindingService bindingService) {
         List<Binding<Object>> bindings = new ArrayList<>();
-        if (log.isDebugEnabled()) {
-            log.debug(
-                String.format("Binding inputs for %s:%s", this.namespace, this.getClass()));
-        }
-
-        if (inputHolder.isBindable()) {
+        if (enableInput) {
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Binding %s:%s:%s", this.namespace, this.getClass(),
-                    inputHolder.getName()));
+                log.debug(
+                    String.format("Binding inputs for %s:%s", this.namespace, this.getClass()));
             }
-            bindings.addAll(bindingService
-                .bindConsumer(inputHolder.getBoundTarget(), inputHolder.getName()));
+
+            if (inputHolder.isBindable()) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Binding %s:%s:%s", this.namespace, this.getClass(),
+                        inputHolder.getName()));
+                }
+                bindings.addAll(bindingService
+                    .bindConsumer(inputHolder.getBoundTarget(), inputHolder.getName()));
+            }
         }
         return bindings;
     }
@@ -229,16 +257,18 @@ public class EventBindable implements InitializingBean, Bindable {
      */
     @Override
     public void bindOutputs(BindingService bindingService) {
-        if (log.isDebugEnabled()) {
-            log.debug(
-                String.format("Binding outputs for %s:%s", this.namespace, this.getClass()));
-        }
-        if (outputHolder.isBindable()) {
+        if (enableOutput) {
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Binding %s:%s:%s", this.namespace, this.getClass(),
-                    outputHolder.getName()));
+                log.debug(
+                    String.format("Binding outputs for %s:%s", this.namespace, this.getClass()));
             }
-            bindingService.bindProducer(outputHolder.getBoundTarget(), outputHolder.getName());
+            if (outputHolder.isBindable()) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Binding %s:%s:%s", this.namespace, this.getClass(),
+                        outputHolder.getName()));
+                }
+                bindingService.bindProducer(outputHolder.getBoundTarget(), outputHolder.getName());
+            }
         }
     }
 
@@ -248,17 +278,19 @@ public class EventBindable implements InitializingBean, Bindable {
      */
     @Override
     public void unbindInputs(BindingService bindingService) {
-        if (log.isDebugEnabled()) {
-            log.debug(
-                String.format("Unbinding inputs for %s:%s", this.namespace, this.getClass()));
-        }
-
-        if (inputHolder.isBindable()) {
+        if (enableInput) {
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Unbinding %s:%s:%s", this.namespace, this.getClass(),
-                    inputHolder.getName()));
+                log.debug(
+                    String.format("Unbinding inputs for %s:%s", this.namespace, this.getClass()));
             }
-            bindingService.unbindConsumers(inputHolder.getName());
+
+            if (inputHolder.isBindable()) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Unbinding %s:%s:%s", this.namespace, this.getClass(),
+                        inputHolder.getName()));
+                }
+                bindingService.unbindConsumers(inputHolder.getName());
+            }
         }
     }
 
@@ -268,16 +300,18 @@ public class EventBindable implements InitializingBean, Bindable {
      */
     @Override
     public void unbindOutputs(BindingService bindingService) {
-        if (log.isDebugEnabled()) {
-            log.debug(
-                String.format("Unbinding outputs for %s:%s", this.namespace, this.getClass()));
-        }
-        if (outputHolder.isBindable()) {
+        if (enableOutput) {
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Unbinding %s:%s:%s", this.namespace, this.getClass(),
-                    outputHolder.getName()));
+                log.debug(
+                    String.format("Unbinding outputs for %s:%s", this.namespace, this.getClass()));
             }
-            bindingService.unbindProducers(outputHolder.getName());
+            if (outputHolder.isBindable()) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Unbinding %s:%s:%s", this.namespace, this.getClass(),
+                        outputHolder.getName()));
+                }
+                bindingService.unbindProducers(outputHolder.getName());
+            }
         }
     }
 
@@ -287,7 +321,10 @@ public class EventBindable implements InitializingBean, Bindable {
      */
     @Override
     public Set<String> getInputs() {
-        return Sets.newHashSet(this.inputHolder.name);
+        if (enableInput && null != this.inputHolder) {
+            return Sets.newHashSet(this.inputHolder.name);
+        }
+        return ImmutableSet.of();
     }
 
     /**
@@ -296,7 +333,10 @@ public class EventBindable implements InitializingBean, Bindable {
      */
     @Override
     public Set<String> getOutputs() {
-        return Sets.newHashSet(this.outputHolder.name);
+        if (enableOutput && null != this.outputHolder) {
+            return Sets.newHashSet(this.outputHolder.name);
+        }
+        return ImmutableSet.of();
     }
 
 }

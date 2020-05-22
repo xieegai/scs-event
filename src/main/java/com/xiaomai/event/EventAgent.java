@@ -40,6 +40,7 @@ import com.google.common.collect.Sets;
 import com.xiaomai.event.annotation.EventConf;
 import com.xiaomai.event.annotation.EventMeta;
 import com.xiaomai.event.constant.EventBuiltinAttr;
+import com.xiaomai.event.enums.EventBindingType;
 import com.xiaomai.event.lifecycle.IEventLifecycle;
 import com.xiaomai.event.utils.EventBindingUtils;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
@@ -157,9 +158,9 @@ public class EventAgent<T> {
 
         String simpleBindingName = EventBindingUtils.resolveOutputBindingName(payloadClass);
         if (StringUtils.hasText(channel)) {
-            EventConf eventConf = EventBindingUtils.getEventConf(payloadClass);
-            Assert.state(!(null == eventConf || eventConf.produceChannels().length == 0
-              || !Sets.newHashSet(eventConf.produceChannels()).contains(channel)), "channel not registered to trigger event");
+            EventConf eventConf = EventBindingUtils.getEventConf(payloadClass, EventBindingType.OUTPUT);
+            Assert.state(!(null == eventConf || eventConf.channels().length == 0
+              || !Sets.newHashSet(eventConf.channels()).contains(channel)), "channel not registered to trigger event");
         }
         MessageChannel messageChannel = resolver.resolveDestination(
             EventBindingUtils.composeEventChannelBeanName(simpleBindingName, channel));

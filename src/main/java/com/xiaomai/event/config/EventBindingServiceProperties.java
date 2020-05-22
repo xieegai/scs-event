@@ -65,7 +65,7 @@ public class EventBindingServiceProperties extends BindingServiceProperties {
 
         Class<?> eventPayloadClass = EventBindingUtils.getEventPayloadClass(eventName);
         if (null == eventPayloadClass) {
-            log.warn("event not registered: {}, fallback to spring cloud stream message", eventName);
+            log.debug("event not registered: {}, fallback to spring cloud stream message", eventName);
             return super.getBindingProperties(bindingName);
         }
 
@@ -80,9 +80,7 @@ public class EventBindingServiceProperties extends BindingServiceProperties {
             bindingProperties.setDestination(destination);
         }
 
-
-
-        EventConf eventConf = EventBindingUtils.getEventConf(eventPayloadClass);
+        EventConf eventConf = EventBindingUtils.getEventConf(bindingName);
         if (eventConf != null) {
             if (StringUtils.hasText(eventConf.binder())) {
                 bindingProperties.setBinder(eventConf.binder());

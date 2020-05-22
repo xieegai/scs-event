@@ -7,6 +7,6 @@ package com.xiaomai.event.annotation;
 public @interface EventConf {
   Class<?> event();
   String binder() default "";
+  String[] channels() default {};
   int partitionCount() default 1;
-  String[] produceChannels() default {};
 }

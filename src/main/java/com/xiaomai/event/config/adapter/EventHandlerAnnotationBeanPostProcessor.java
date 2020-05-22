@@ -187,11 +187,10 @@ public class EventHandlerAnnotationBeanPostProcessor implements BeanPostProcesso
                 EventBindingUtils.cacheEventHandler(eventHandler);
 
                 if (!method.isBridge()) {
-                    Class<?> eventPayloadClass = eventHandler.value();
-                    EventBindingUtils.registerInputBindingTargetBeanDefinition(
-                      eventPayloadClass, beanFactory, eventHandler, null
-                    );
-
+//                    Class<?> eventPayloadClass = eventHandler.value();
+//                    EventBindingUtils.registerInputBindingTargetBeanDefinition(
+//                      eventPayloadClass, beanFactory, eventHandler, null
+//                    );
                     streamListenerCallbacks.add(() -> {
                         Assert.isTrue(method.getAnnotation(Input.class) == null, StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER);
                         this.doPostProcess(eventHandler, method, bean);

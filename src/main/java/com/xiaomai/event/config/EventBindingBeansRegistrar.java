@@ -34,7 +34,8 @@
 
 package com.xiaomai.event.config;
 
-import com.xiaomai.event.annotation.EnableEvents;
+import com.xiaomai.event.annotation.EnableEventBinding;
+import com.xiaomai.event.enums.EventBindingType;
 import com.xiaomai.event.utils.EventBindingUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
@@ -81,24 +82,18 @@ public class EventBindingBeansRegistrar implements ImportBeanDefinitionRegistrar
     @Override
     public void registerBeanDefinitions(AnnotationMetadata metadata,
                                         BeanDefinitionRegistry registry) {
-        // Get the event binding meta information from the EnableEvents annotation
+        // Get the event binding meta information from the EnableEventBinding annotation
         AnnotationAttributes attrs = AnnotatedElementUtils.getMergedAnnotationAttributes(
             ClassUtils.resolveClassName(metadata.getClassName(), null),
-            EnableEvents.class);
+            EnableEventBinding.class);
 
-        EnableEvents enableEvents = AnnotationUtils.synthesizeAnnotation(attrs,
-          EnableEvents.class, ClassUtils.resolveClassName(metadata.getClassName(), null));
+        EnableEventBinding enableEventBinding = AnnotationUtils.synthesizeAnnotation(attrs,
+          EnableEventBinding.class, ClassUtils.resolveClassName(metadata.getClassName(), null));
 
-        Arrays.stream(enableEvents.config()).forEach(EventBindingUtils::cacheEventConfig);
-
-        // Get the events to publish by this app
-        Class<?>[] publishEventClasses = enableEvents.produce();
-
-        for (Class<?> publishEventType: publishEventClasses) {
-            EventBindingUtils
-                .registerOutputBindingTargetBeanDefinition(publishEventType, registry,
-                    ClassUtils.resolveClassName(metadata.getClassName(), null));
-        }
+        // Register the events to publish and consume
+        EventBindingUtils.registerEventBindingBeanDefinitions(
+            enableEventBinding.produce(), enableEventBinding.consume(),
+            registry, ClassUtils.resolveClassName(metadata.getClassName(), null));
 
         //*IMPORTANT* replace the original BindingServiceProperties with {@link EventBindingServiceProperties}
         registry.removeBeanDefinition("spring.cloud.stream-" + BindingServiceProperties.class.getName());
@@ -122,12 +117,6 @@ public class EventBindingBeansRegistrar implements ImportBeanDefinitionRegistrar
     @Override
     public void setEnvironment(Environment environment) {
         this.environment = (ConfigurableEnvironment)environment;
-    }
-
-    private Class<?>[] collectProduceEventClasses(AnnotationAttributes attrs, String className) {
-        EnableEvents enableBinding = AnnotationUtils.synthesizeAnnotation(attrs,
-            EnableEvents.class, ClassUtils.resolveClassName(className, null));
-        return enableBinding.produce();
     }
 
 }
