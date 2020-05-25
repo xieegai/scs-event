@@ -35,14 +35,18 @@
 package com.xiaomai.event.config;
 
 import com.xiaomai.event.annotation.EnableEventBinding;
+import com.xiaomai.event.annotation.EventHandler;
 import com.xiaomai.event.enums.EventBindingType;
 import com.xiaomai.event.utils.EventBindingUtils;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
@@ -55,6 +59,7 @@ import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.util.ClassUtils;
 
 import java.util.Arrays;
+import org.springframework.util.ReflectionUtils;
 
 
 /**
@@ -92,7 +97,7 @@ public class EventBindingBeansRegistrar implements ImportBeanDefinitionRegistrar
 
         // Register the events to publish and consume
         EventBindingUtils.registerEventBindingBeanDefinitions(
-            enableEventBinding.produce(), enableEventBinding.consume(),
+            enableEventBinding.produce(), enableEventBinding.listenerClass(),
             registry, ClassUtils.resolveClassName(metadata.getClassName(), null));
 
         //*IMPORTANT* replace the original BindingServiceProperties with {@link EventBindingServiceProperties}

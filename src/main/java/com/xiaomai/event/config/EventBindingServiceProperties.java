@@ -39,7 +39,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.xiaomai.event.annotation.EventHandler;
 import com.xiaomai.event.constant.EventBuiltinAttr;
 import lombok.extern.slf4j.Slf4j;
-import com.xiaomai.event.annotation.EventConf;
+import com.xiaomai.event.annotation.EventProducer;
 import com.xiaomai.event.utils.EventBindingUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -80,14 +80,14 @@ public class EventBindingServiceProperties extends BindingServiceProperties {
             bindingProperties.setDestination(destination);
         }
 
-        EventConf eventConf = EventBindingUtils.getEventConf(bindingName);
-        if (eventConf != null) {
-            if (StringUtils.hasText(eventConf.binder())) {
-                bindingProperties.setBinder(eventConf.binder());
+        EventProducer eventProducerConf = EventBindingUtils.getEventProducerConf(eventPayloadClass);
+        if (eventProducerConf != null) {
+            if (StringUtils.hasText(eventProducerConf.binder())) {
+                bindingProperties.setBinder(eventProducerConf.binder());
             }
         }
 
-        EventHandler eventHandler = EventBindingUtils.getEventConsumerConf(eventPayloadClass);
+        EventHandler eventHandler = EventBindingUtils.getEventHandlerConf(eventPayloadClass);
 
         // Customize the consumer group
         if (eventHandler != null && StringUtils.hasText(eventHandler.group())) {
@@ -123,8 +123,8 @@ public class EventBindingServiceProperties extends BindingServiceProperties {
               .parseExpression("headers['" + EventBuiltinAttr.EVENT_KEY.getKey() + "']");
             producerProperties.setPartitionKeyExpression(partitionExpr);
 
-            if (eventConf != null && eventConf.partitionCount() > 1) {
-                producerProperties.setPartitionCount(eventConf.partitionCount());
+            if (eventProducerConf != null && eventProducerConf.partitionCount() > 1) {
+                producerProperties.setPartitionCount(eventProducerConf.partitionCount());
             }
         }
 

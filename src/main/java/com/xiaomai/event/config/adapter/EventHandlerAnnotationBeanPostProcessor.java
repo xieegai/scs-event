@@ -178,23 +178,20 @@ public class EventHandlerAnnotationBeanPostProcessor implements BeanPostProcesso
     @Override
     public final Object postProcessAfterInitialization(Object bean, final String beanName) throws BeansException {
         Class<?> targetClass = AopUtils.isAopProxy(bean) ? AopUtils.getTargetClass(bean) : bean.getClass();
-        Method[] uniqueDeclaredMethods = ReflectionUtils.getUniqueDeclaredMethods(targetClass);
-        for (Method method : uniqueDeclaredMethods) {
-            EventHandler eventHandler = AnnotatedElementUtils.findMergedAnnotation(method, EventHandler.class);
-            if (eventHandler != null) {
-
-                // cache the event consumer config
-                EventBindingUtils.cacheEventHandler(eventHandler);
-
-                if (!method.isBridge()) {
-//                    Class<?> eventPayloadClass = eventHandler.value();
-//                    EventBindingUtils.registerInputBindingTargetBeanDefinition(
-//                      eventPayloadClass, beanFactory, eventHandler, null
-//                    );
-                    streamListenerCallbacks.add(() -> {
-                        Assert.isTrue(method.getAnnotation(Input.class) == null, StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER);
-                        this.doPostProcess(eventHandler, method, bean);
-                    });
+        // only process the EventListener registered in {@link EnableEventBinding}
+        if (EventBindingUtils.isListenerClassRegistered(targetClass)) {
+            Method[] uniqueDeclaredMethods = ReflectionUtils.getUniqueDeclaredMethods(targetClass);
+            for (Method method : uniqueDeclaredMethods) {
+                EventHandler eventHandler = AnnotatedElementUtils
+                    .findMergedAnnotation(method, EventHandler.class);
+                if (eventHandler != null) {
+                    if (!method.isBridge()) {
+                        streamListenerCallbacks.add(() -> {
+                            Assert.isTrue(method.getAnnotation(Input.class) == null,
+                                StreamListenerErrorMessages.INPUT_AT_STREAM_LISTENER);
+                            this.doPostProcess(eventHandler, method, bean);
+                        });
+                    }
                 }
             }
         }

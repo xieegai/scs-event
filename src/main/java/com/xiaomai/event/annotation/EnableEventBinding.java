@@ -72,6 +72,7 @@ import org.springframework.context.annotation.Import;
 @EnableBinding
 @Import({EventAgentConfiguration.class, EventBindingBeansRegistrar.class, EventBindingConfiguration.class})
 public @interface EnableEventBinding {
-    EventConf[] produce() default {};
-    EventConf[] consume() default {};
+    EventProducer[] produce() default {};
+    EventProducer[] consume() default {};
+    Class<?>[] listenerClass() default {};
 }

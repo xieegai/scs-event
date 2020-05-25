@@ -17,13 +17,14 @@
 
 package com.xiaomai.event.utils;
 
+import com.google.common.collect.Sets;
 import com.xiaomai.event.annotation.EventHandler;
 import com.xiaomai.event.annotation.EventMeta;
 import com.xiaomai.event.EventBindable;
-import com.xiaomai.event.annotation.EventConf;
+import com.xiaomai.event.annotation.EventProducer;
 import com.xiaomai.event.enums.EventBindingType;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.AutowireCandidateQualifier;
@@ -38,6 +39,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -61,19 +63,20 @@ public abstract class EventBindingUtils {
 
     private static Map<String, Class<?>> channelEventMap = new ConcurrentHashMap<>();
 
-    private static Map<Class<?>, Map<EventBindingType, EventConf>> eventConfMap = new ConcurrentHashMap<>();
+    private static Map<Class<?>, EventProducer> eventProducerConfMap = new ConcurrentHashMap<>();
 
     private static Map<Class<?>, EventHandler> eventConsumerConfMap = new ConcurrentHashMap<>();
 
     private static Map<String, EventBindingType> bindingTypeMap = new ConcurrentHashMap<>();
 
-    /**
-     * Cache the event (grobal) config
-     * @param eventConf the event config to cache
-     */
-    public static void cacheEventConfig(EventConf eventConf, EventBindingType eventBindingType) {
-        eventConfMap.putIfAbsent(eventConf.event(), new ConcurrentHashMap<>());
-        eventConfMap.get(eventConf.event()).putIfAbsent(eventBindingType, eventConf);
+    private static Set<Class<?>> listenerClasses = Sets.newConcurrentHashSet();
+
+        /**
+         * Cache the event (grobal) config
+         * @param eventProducer the event config to cache
+         */
+        public static void cacheEventConfig(EventProducer eventProducer) {
+            eventProducerConfMap.putIfAbsent(eventProducer.event(), eventProducer);
     }
 
     /**
@@ -82,54 +85,56 @@ public abstract class EventBindingUtils {
      */
     public static void cacheEventHandler(EventHandler eventHandler) {
         eventConsumerConfMap.putIfAbsent(eventHandler.value(), eventHandler);
-
     }
 
     public static void registerEventBindingBeanDefinitions(
-        EventConf[] produceEvents, EventConf[] consumeEvents,
+        EventProducer[] produceEvents, Class<?>[] eventListenerClasses,
         BeanDefinitionRegistry registry, Class<?> parentClass) {
-        Arrays.stream(produceEvents).forEach(e -> EventBindingUtils.cacheEventConfig(e,
-            EventBindingType.OUTPUT));
-        Arrays.stream(consumeEvents).forEach(e -> EventBindingUtils.cacheEventConfig(e,
-            EventBindingType.INPUT));
+        Arrays.stream(produceEvents).forEach(EventBindingUtils::cacheEventConfig);
 
-        eventConfMap.forEach((eventPayloadClass, confMap) -> {
-            if (confMap.containsKey(EventBindingType.INPUT)) {
-                EventConf inputEventConf = confMap.get(EventBindingType.INPUT);
-                registerInputBindingTargetBeanDefinition(eventPayloadClass, inputEventConf, registry, parentClass);
-            }
-            if (confMap.containsKey(EventBindingType.OUTPUT)) {
-                EventConf outputEventConf = confMap.get(EventBindingType.OUTPUT);
-                registerOutputBindingTargetBeanDefinition(eventPayloadClass, outputEventConf, registry, parentClass);
-            }
+        // cache all registered listener classes
+        listenerClasses.addAll(Arrays.asList(eventListenerClasses));
+
+        EventHandler[] eventHandlers = Arrays.stream(eventListenerClasses)
+            .flatMap(c -> Arrays.stream(ReflectionUtils.getUniqueDeclaredMethods(c)))
+            .filter(m -> m.getDeclaredAnnotation(EventHandler.class) != null)
+            .map(x -> x.getDeclaredAnnotation(EventHandler.class)).toArray(EventHandler[]::new);
+
+        Arrays.stream(eventHandlers).forEach(EventBindingUtils::cacheEventHandler);
+
+        eventProducerConfMap.forEach((eventPayloadClass, eventProducer)
+            -> registerOutputBindingTargetBeanDefinition(eventPayloadClass, eventProducer, registry, parentClass));
+
+        eventConsumerConfMap.forEach((eventPayloadClass, inputEventHandler) -> {
+            registerInputBindingTargetBeanDefinition(eventPayloadClass, inputEventHandler, registry, parentClass);
         });
     }
 
     private static void registerInputBindingTargetBeanDefinition(Class<?> eventPayloadClass,
-        EventConf eventConf, BeanDefinitionRegistry registry, Class<?> parentClass) {
+        EventHandler eventHandler, BeanDefinitionRegistry registry, Class<?> parentClass) {
         EventMeta eventMeta = eventPayloadClass.getAnnotation(EventMeta.class);
         if (null == eventMeta) {
             log.warn("EventMeta annotation not marked on class {}, ignored", eventPayloadClass.getName());
             return;
         }
-        if (null != eventConf && eventConf.channels().length > 0) {
+        if (null != eventHandler && eventHandler.channels().length > 0) {
             registerBindingTargetBeanDefinition(Input.class, eventPayloadClass,
-                eventConf.channels(), registry, parentClass);
+                eventHandler.channels(), registry, parentClass);
         } else {
             registerBindingTargetBeanDefinition(Input.class, eventPayloadClass, registry, parentClass);
         }
     }
 
     private static void registerOutputBindingTargetBeanDefinition(Class<?> eventPayloadClass,
-        EventConf eventConf, BeanDefinitionRegistry registry, Class<?> parentClass) {
+        EventProducer eventProducer, BeanDefinitionRegistry registry, Class<?> parentClass) {
         EventMeta eventMeta = eventPayloadClass.getAnnotation(EventMeta.class);
         if (null == eventMeta) {
             log.warn("EventMeta annotation not marked on class {}, ignored", eventPayloadClass.getName());
             return;
         }
-        if (null != eventConf && eventConf.channels().length > 0) {
+        if (null != eventProducer && eventProducer.channels().length > 0) {
             registerBindingTargetBeanDefinition(Output.class, eventPayloadClass,
-                eventConf.channels(), registry, parentClass);
+                eventProducer.channels(), registry, parentClass);
         } else {
             registerBindingTargetBeanDefinition(Output.class, eventPayloadClass, registry, parentClass);
         }
@@ -314,21 +319,27 @@ public abstract class EventBindingUtils {
         return channelEventMap.get(bindingName);
     }
 
-    public static EventConf getEventConf(Class<?> eventPayloadClass, EventBindingType eventBindingType) {
-        return eventConfMap.getOrDefault(eventPayloadClass, Collections.emptyMap()).get(eventBindingType);
+    /**
+     * 取得事件的生产配置
+     * @param eventPayloadClass 事件payload类定义
+     * @return 事件生产配置
+     */
+    public static EventProducer getEventProducerConf(Class<?> eventPayloadClass) {
+        return eventProducerConfMap.get(eventPayloadClass);
     }
 
-    public static EventConf getEventConf(String bindingName) {
-        Class<?> eventPayloadClass = getEventPayloadClass(bindingName);
-        if (null == eventPayloadClass) {
-            return null;
-        }
+    public static EventBindingType resolveEventBindingType(String bindingName) {
         EventBindingType eventBindingType = bindingName.startsWith(OUTPUT_MAGIC)?
             EventBindingType.OUTPUT: EventBindingType.INPUT;
-        return getEventConf(eventPayloadClass, eventBindingType);
+        return eventBindingType;
     }
 
-    public static EventHandler getEventConsumerConf(Class<?> eventPayloadClass) {
+    /**
+     * 取得事件处理者配置
+     * @param eventPayloadClass 事件payload类定义
+     * @return 事件处理者配置
+     */
+    public static EventHandler getEventHandlerConf(Class<?> eventPayloadClass) {
         return eventConsumerConfMap.get(eventPayloadClass);
     }
 
@@ -337,5 +348,9 @@ public abstract class EventBindingUtils {
             return simpleBindingName + CHANNEL_DELIM + channel;
         }
         return simpleBindingName;
+    }
+
+    public static boolean isListenerClassRegistered(Class<?> listenerClass) {
+        return listenerClasses.contains(listenerClass);
     }
 }
