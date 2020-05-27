@@ -39,6 +39,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Set;
 
 /**
  * The event define annotation to mark some meta info on event payload class
@@ -77,6 +78,14 @@ public @interface EventMeta {
 	 */
 	String[] partitionOn() default {};
 
-	boolean idempotent() default false;
+	/**
+	 * Whether or not audit the event lifecycle
+	 */
+	boolean enableAudit() default false;
+
+	/**
+	 * Whether the event is dedicated to specified consumers
+	 */
+	String[] consumerWhitelist() default {};
 
 }

@@ -48,11 +48,48 @@ public interface IEventLifecycle {
         return payloadClass.getDeclaredAnnotation(EventMeta.class);
     }
 
-    String onTrigger(Object payload, Map<String, Object> eventAttrs);
+    /**
+     * 当生产者开始生产事件时调用
+     * @param payload 事件payload信息
+     * @param eventAttrs 事件属性
+     * @return 事件序列号
+     */
+    default String onIssue(Object payload, Map<String, Object> eventAttrs) {
+        return onIssue(null, payload, eventAttrs);
+    }
 
-    boolean onExecute(String eventSeq, Class<?> payloadClass);
+    /**
+     * 当生产者开始生产事件时调用
+     * @param eventSeq 事件序列号
+     * @param payload 事件payload信息
+     * @param eventAttrs 事件属性
+     * @return 事件序列号
+     */
+    String onIssue(String eventSeq, Object payload, Map<String, Object> eventAttrs);
 
-    void onSucess(String eventSeq, Class<?> payloadClass);
+    /**
+     * 当消费者开始消费时调用
+     * @param eventSeq 事件序列号
+     * @param consumerKey 消费者标识
+     * @param payloadClass 消费事件类
+     * @return 是否需要执行
+     */
+    boolean onExecute(String eventSeq, String consumerKey, Class<?> payloadClass);
 
-    void onFail(String eventSeq, Class<?> payloadClass, Exception e);
+    /**
+     * 当消费者消费成功时调用
+     * @param eventSeq 事件序列号
+     * @param consumerKey 消费者标识
+     * @param payloadClass 消费事件类
+     */
+    void onSuccess(String eventSeq, String consumerKey, Class<?> payloadClass);
+
+    /**
+     * 当消费者消费失败时调用
+     * @param eventSeq 事件序列号
+     * @param consumerKey 消费者标识
+     * @param payloadClass 消费事件类
+     * @param e 消费失败异常信息
+     */
+    void onFail(String eventSeq, String consumerKey, Class<?> payloadClass, Exception e);
 }

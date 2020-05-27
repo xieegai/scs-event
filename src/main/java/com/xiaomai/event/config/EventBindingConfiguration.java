@@ -38,6 +38,7 @@ import com.xiaomai.event.config.adapter.EventHandlerAnnotationBeanPostProcessor;
 import com.xiaomai.event.config.adapter.EventHandlerMethodFactory;
 import com.xiaomai.event.lifecycle.IEventLifecycle;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderFactory;

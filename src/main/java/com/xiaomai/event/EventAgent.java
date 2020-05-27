@@ -137,7 +137,7 @@ public class EventAgent<T> {
      * @return the event sequence of the dispatched event
      */
     public String triggerEvent(T payload, Map<String, Object> eventAttrs, String channel) {
-        String eventSeq = eventLifecycle.onTrigger(payload, eventAttrs);
+        String eventSeq = eventLifecycle.onIssue(payload, eventAttrs);
 
         final Object partitionKey = (!CollectionUtils.isEmpty(partitionFields)) ?
             partitionFields.stream().map(f -> ReflectionUtils.getField(f, payload)).filter(

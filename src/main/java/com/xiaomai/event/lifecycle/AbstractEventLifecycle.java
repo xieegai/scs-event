@@ -34,6 +34,7 @@
 
 package com.xiaomai.event.lifecycle;
 
+import com.google.common.collect.ImmutableList;
 import com.xiaomai.event.annotation.EventMeta;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
@@ -51,27 +52,47 @@ public abstract class AbstractEventLifecycle extends DefaultEventLifecycle imple
 
     private ApplicationContext applicationContext;
 
+    @Override
     public String genEventSeq(Object payload, Map<String, Object> eventAttrs) {
         EventMeta eventMeta = getEventMeta(payload.getClass());
 
-        if (!eventMeta.idempotent())
-            return UUID.randomUUID().toString();
+        if (!eventMeta.enableAudit())
+            return super.genEventSeq(payload, eventAttrs);
         return makeRecord(eventMeta, payload, eventAttrs);
     }
 
     public abstract String makeRecord(EventMeta eventMeta, Object payload, Map<String, Object> eventAttrs);
 
-    public boolean onExecute(String eventSeq, Class<?> payloadClass) {
+    @Override
+    public boolean onExecute(String eventSeq, String consumerKey, Class<?> payloadClass) {
         EventMeta eventMeta = getEventMeta(payloadClass);
-        super.onExecute(eventSeq, payloadClass);
+        super.onExecute(eventSeq, consumerKey, payloadClass);
 
-        if (!eventMeta.idempotent())
+        if (!eventMeta.enableAudit())
             return true;
-        return preExecute(eventSeq, eventMeta, payloadClass);
+        if (eventMeta.consumerWhitelist().length > 0) {
+            if (!ImmutableList.copyOf(eventMeta.consumerWhitelist()).contains(consumerKey)) {
+                return false;
+            }
+        }
+        return preExecute(eventSeq, consumerKey, eventMeta, payloadClass);
     }
 
-    public abstract boolean preExecute(String eventSeq, EventMeta eventMeta, Class<?> payloadClass);
+    /**
+     * pre the event consumed by consumer
+     * @param eventSeq the event sequence
+     * @param consumerKey the consumer key
+     * @param eventMeta the event meta
+     * @param payloadClass the event payload class
+     * @return whether to execute
+     */
+    public abstract boolean preExecute(String eventSeq, String consumerKey, EventMeta eventMeta, Class<?> payloadClass);
 
+    /**
+     * Set the application context
+     * @param applicationContext the application context
+     * @throws BeansException
+     */
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }

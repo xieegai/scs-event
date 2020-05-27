@@ -35,6 +35,7 @@
 package com.xiaomai.event.config.adapter;
 
 import com.xiaomai.event.lifecycle.IEventLifecycle;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolver;
 import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolverComposite;
@@ -44,6 +45,9 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 public class EventHandlerMethodFactory extends DefaultMessageHandlerMethodFactory {
+
+    @Value("${spring.application.name}")
+    private String appName;
 
     private IEventLifecycle eventLifecycle;
 
@@ -56,7 +60,7 @@ public class EventHandlerMethodFactory extends DefaultMessageHandlerMethodFactor
 
     @Override
     public InvocableHandlerMethod createInvocableHandlerMethod(Object bean, Method method) {
-        EventHandlerMethod handlerMethod = new EventHandlerMethod(bean, method, this.eventLifecycle);
+        EventHandlerMethod handlerMethod = new EventHandlerMethod(bean, method, this.eventLifecycle, appName);
         handlerMethod.setMessageMethodArgumentResolvers(this.myArgumentResolvers);
         return handlerMethod;
     }

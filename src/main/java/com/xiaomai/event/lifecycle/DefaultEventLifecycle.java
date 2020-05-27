@@ -35,9 +35,11 @@
 package com.xiaomai.event.lifecycle;
 
 import com.xiaomai.event.utils.StructuredArguments;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
+import org.springframework.util.StringUtils;
 
 /**
  * Created by baihe on 2017/8/23.
@@ -46,12 +48,12 @@ import java.util.Map;
 public class DefaultEventLifecycle implements IEventLifecycle {
 
     public String genEventSeq(Object payload, Map<String, Object> eventAttrs) {
-        return System.currentTimeMillis() + "";
+        return UUID.randomUUID().toString();
     }
 
     @Override
-    public String onTrigger(Object payload, Map<String, Object> eventAttrs) {
-        String eventSeq = genEventSeq(payload, eventAttrs);
+    public String onIssue(String eventSeq, Object payload, Map<String, Object> eventAttrs) {
+        String issueEventSeq = StringUtils.hasText(eventSeq) ? eventSeq : genEventSeq(payload, eventAttrs);
         log.info("Mark event {}, {} pending",
                 StructuredArguments.keyValue("eventId", eventSeq),
                 StructuredArguments.keyValue("eventPayloadClass", payload.getClass().getName()));
@@ -59,24 +61,27 @@ public class DefaultEventLifecycle implements IEventLifecycle {
     }
 
     @Override
-    public boolean onExecute(String eventSeq, Class<?> payloadClass) {
-        log.info("Mark event {}, {} executing",
+    public boolean onExecute(String eventSeq, String consumerKey, Class<?> payloadClass) {
+        log.info("Mark event {}, {}, {} executing",
                 StructuredArguments.keyValue("eventId", eventSeq),
+                StructuredArguments.keyValue("consumerKey", consumerKey),
                 StructuredArguments.keyValue("eventPayloadClass", payloadClass.getName()));
         return true;
     }
 
     @Override
-    public void onSucess(String eventSeq, Class<?> payloadClass) {
-        log.info("Mark event {}, {} committed",
+    public void onSuccess(String eventSeq, String consumerKey, Class<?> payloadClass) {
+        log.info("Mark event {}, {}, {} committed",
                 StructuredArguments.keyValue("eventId", eventSeq),
+                StructuredArguments.keyValue("consumerKey", consumerKey),
                 StructuredArguments.keyValue("eventPayloadClass", payloadClass.getName()));
     }
 
     @Override
-    public void onFail(String eventSeq, Class<?> payloadClass, Exception e) {
-        log.info("Mark event {}, {} failed, {}",
+    public void onFail(String eventSeq, String consumerKey, Class<?> payloadClass, Exception e) {
+        log.info("Mark event {}, {}, {} failed, {}",
                 StructuredArguments.keyValue("eventId", eventSeq),
+                StructuredArguments.keyValue("consumerKey", consumerKey),
                 StructuredArguments.keyValue("eventPayloadClass", payloadClass.getName()),
                 StructuredArguments.keyValue("reason", e.getMessage()));
     }

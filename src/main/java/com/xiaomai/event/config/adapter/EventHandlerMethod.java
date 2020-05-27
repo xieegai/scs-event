@@ -41,17 +41,20 @@ public class EventHandlerMethod extends InvocableHandlerMethod {
     private static final ThreadLocal<DateFormat> FMT_THREAD_LOCAL =
             ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
 
-    private IEventLifecycle eventLifecycle;
+    private final IEventLifecycle eventLifecycle;
 
-    private Object myBean;
+    private final Object myBean;
 
-    private Method myMethod;
+    private final Method myMethod;
 
-    public EventHandlerMethod(Object bean, Method method, IEventLifecycle eventLifecycle) {
+    private final String customerKey;
+
+    public EventHandlerMethod(Object bean, Method method, IEventLifecycle eventLifecycle, String customerKey) {
         super(bean, method);
         this.eventLifecycle = eventLifecycle;
         this.myBean = bean;
         this.myMethod = method;
+        this.customerKey = customerKey;
     }
 
     private static String getStringFromHeader(MessageHeaders messageHeaders, String key) {
@@ -119,7 +122,7 @@ public class EventHandlerMethod extends InvocableHandlerMethod {
                 StructuredArguments.keyValue("method", myBean.getClass().getName() + "." + myMethod.getName()));
 
         Object eventResult = null;
-        boolean needExec = eventLifecycle.onExecute(eventSeq, eventPayloadClass);
+        boolean needExec = eventLifecycle.onExecute(eventSeq, customerKey, eventPayloadClass);
         if (needExec) {
             try {
                 eventResult = super.invoke(message, providedArgs);
@@ -131,7 +134,7 @@ public class EventHandlerMethod extends InvocableHandlerMethod {
                     StructuredArguments.keyValue(EventBuiltinAttr.EVENT_TRIGGER_TIME.getKey(),
                         FMT_THREAD_LOCAL.get().format(new Date(eventTriggerTime))),
                     StructuredArguments.keyValue(EventBuiltinAttr.EVENT_TRIGGER_APP.getKey(), producer), e);
-                eventLifecycle.onFail(eventSeq, eventPayloadClass, e);
+                eventLifecycle.onFail(eventSeq, customerKey, eventPayloadClass, e);
                 return null;
             }
 
@@ -143,7 +146,7 @@ public class EventHandlerMethod extends InvocableHandlerMethod {
                     FMT_THREAD_LOCAL.get().format(new Date(eventTriggerTime))),
                 StructuredArguments.keyValue(EventBuiltinAttr.EVENT_TRIGGER_APP.getKey(), producer),
                 StructuredArguments.keyValue("executeTime", checkDuration(eventExecuteStart, System.currentTimeMillis())));
-            eventLifecycle.onSucess(eventSeq, eventPayloadClass);
+            eventLifecycle.onSuccess(eventSeq, customerKey, eventPayloadClass);
         }
         return eventResult;
     }
