@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.jiejing.event</groupId>
     <artifactId>scs-event</artifactId>
-    <version>0.0.2-SNAPSHOT</version>
+    <version>0.0.1-SNAPSHOT</version>
     <name>scs-event</name>
     <description>spring cloud stream event</description>
     <url>https://github.com/bailaohe/scs-event</url>
