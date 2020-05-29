@@ -132,4 +132,10 @@ public class EventBindingServiceProperties extends BindingServiceProperties {
 
         return bindingProperties;
     }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        super.afterPropertiesSet();
+
+    }
 }

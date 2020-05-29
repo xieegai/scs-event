@@ -353,4 +353,13 @@ public abstract class EventBindingUtils {
     public static boolean isListenerClassRegistered(Class<?> listenerClass) {
         return listenerClasses.contains(listenerClass);
     }
+
+    public static String resolveDestination(Class<?> eventPayloadClass, String channel) {
+        String eventName = resolveEventBeanName(eventPayloadClass);
+        return composeEventChannelBeanName(eventName, channel);
+    }
+
+    public static Map<Class<?>, EventProducer> getEventProducerConfMap() {
+        return eventProducerConfMap;
+    }
 }
