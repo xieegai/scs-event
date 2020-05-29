@@ -34,6 +34,7 @@
 
 package com.xiaomai.event.config;
 
+import com.xiaomai.event.kafka.BinderPartitionSelector;
 import com.xiaomai.event.lifecycle.DefaultEventLifecycle;
 import com.xiaomai.event.lifecycle.IEventLifecycle;
 import com.xiaomai.event.EventAgentFactory;
@@ -62,5 +63,10 @@ public class EventAgentConfiguration {
     public IEventLifecycle eventLifecycle() {
         log.warn("*NO* bean of IEventLifecycle provided, use {} ...", DefaultEventLifecycle.class.getName());
         return new DefaultEventLifecycle();
+    }
+
+    @Bean(name = "binderPartitionSelector")
+    public BinderPartitionSelector binderPartitionSelector() {
+        return new BinderPartitionSelector();
     }
 }

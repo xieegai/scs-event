@@ -41,6 +41,7 @@ import com.xiaomai.event.annotation.EventMeta;
 import com.xiaomai.event.constant.EventBuiltinAttr;
 import com.xiaomai.event.lifecycle.IEventLifecycle;
 import com.xiaomai.event.utils.EventBindingUtils;
+import com.xiaomai.event.utils.PartitionRouteUtil;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
@@ -139,10 +140,11 @@ public class EventAgent<T> {
     public String triggerEvent(T payload, Map<String, Object> eventAttrs, String channel) {
         String eventSeq = eventLifecycle.onIssue(payload, eventAttrs);
 
-        final Object partitionKey = (!CollectionUtils.isEmpty(partitionFields)) ?
+        final Object payloadKey = (!CollectionUtils.isEmpty(partitionFields)) ?
             partitionFields.stream().map(f -> ReflectionUtils.getField(f, payload)).filter(
             Objects::nonNull).map(String::valueOf).collect(Collectors.joining(DELIM_PARTITION_KEY))
             : Math.abs(payload.hashCode());
+        final Object partitionKey = PartitionRouteUtil.composePartitionKey(payload, channel, payloadKey);
 
         Map<String, Object> eventHeaders = new HashMap<String, Object>() {
             {

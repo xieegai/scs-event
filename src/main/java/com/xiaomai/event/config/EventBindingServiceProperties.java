@@ -127,6 +127,8 @@ public class EventBindingServiceProperties extends BindingServiceProperties {
                 if (null != eventProducerConf && eventProducerConf.partitionCount() > 1) {
                     producerProperties.setPartitionCount(eventProducerConf.partitionCount());
                 }
+
+                producerProperties.setPartitionSelectorName("binderPartitionSelector");
             }
         }
 
