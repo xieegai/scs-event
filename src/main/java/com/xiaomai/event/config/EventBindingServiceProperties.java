@@ -37,15 +37,20 @@ package com.xiaomai.event.config;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.xiaomai.event.annotation.EventHandler;
+import com.xiaomai.event.annotation.EventMeta;
 import com.xiaomai.event.annotation.EventProducer;
+import com.xiaomai.event.constant.EventBuiltinAttr;
 import com.xiaomai.event.utils.EventBindingUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
+import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
+import org.springframework.expression.Expression;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.util.StringUtils;
 
 @ConfigurationProperties("spring.cloud.stream")
@@ -106,39 +111,25 @@ public class EventBindingServiceProperties extends BindingServiceProperties {
             }
         }
 
+        EventMeta eventMeta = EventBindingUtils.resolveEventMeta(eventPayloadClass);
+        ProducerProperties producerProperties = bindingProperties.getProducer();
+        if (producerProperties == null) {
+            producerProperties = new ProducerProperties();
+            bindingProperties.setProducer(producerProperties);
+
+            if (null != eventMeta && eventMeta.partitionOn().length > 0
+                && null == producerProperties.getPartitionKeyExpression()) {
+                SpelExpressionParser parser = new SpelExpressionParser();
+                Expression partitionExpr = parser
+                    .parseExpression("headers['" + EventBuiltinAttr.EVENT_KEY.getKey() + "']");
+                producerProperties.setPartitionKeyExpression(partitionExpr);
+
+                if (null != eventProducerConf && eventProducerConf.partitionCount() > 1) {
+                    producerProperties.setPartitionCount(eventProducerConf.partitionCount());
+                }
+            }
+        }
+
         return bindingProperties;
     }
-
-
-
-//    @Override
-//    public ProducerProperties getProducerProperties(String outputBindingName) {
-//        Assert.notNull(outputBindingName, "The output binding name cannot be null");
-//        String eventName = EventBindingUtils.resolveEventName(outputBindingName);
-//
-//        Class<?> eventPayloadClass = EventBindingUtils.getEventPayloadClass(eventName);
-//        if (null == eventPayloadClass) {
-//            log.debug("event not registered: {}, fallback to spring cloud stream message", eventName);
-//            return super.getProducerProperties(outputBindingName);
-//        }
-//
-//        BindingProperties bindingProperties = getBindingProperties(outputBindingName);
-//        ProducerProperties producerProperties = bindingProperties.getProducer();
-//        if (producerProperties == null) {
-//            producerProperties = new ProducerProperties();
-//            bindingProperties.setProducer(producerProperties);
-//
-//            EventMeta eventMeta = EventBindingUtils.resolveEventMeta(eventPayloadClass);
-//
-//            if (null != eventMeta && eventMeta.partitionOn().length > 0
-//                && null == producerProperties.getPartitionKeyExpression()) {
-//                SpelExpressionParser parser = new SpelExpressionParser();
-//                Expression partitionExpr = parser
-//                    .parseExpression("headers['" + EventBuiltinAttr.EVENT_KEY.getKey() + "']");
-//                producerProperties.setPartitionKeyExpression(partitionExpr);
-//                producerProperties.setPartitionCount(3);
-//            }
-//        }
-//        return producerProperties;
-//    }
 }
