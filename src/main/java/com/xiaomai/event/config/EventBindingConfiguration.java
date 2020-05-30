@@ -36,11 +36,10 @@ package com.xiaomai.event.config;
 
 import com.xiaomai.event.config.adapter.EventHandlerAnnotationBeanPostProcessor;
 import com.xiaomai.event.config.adapter.EventHandlerMethodFactory;
-import com.xiaomai.event.kafka.KafkaTopicPartitionRefreshJob;
+import com.xiaomai.event.partition.kafka.KafkaTopicPartitionRefreshJob;
 import com.xiaomai.event.lifecycle.IEventLifecycle;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -75,7 +74,7 @@ public class EventBindingConfiguration {
     @Bean
     @ConditionalOnClass(AdminClient.class)
     public KafkaTopicPartitionRefreshJob kafkaTopicPartitionRefreshJob(EventBindingServiceProperties eventBindingServiceProperties) {
-        return new KafkaTopicPartitionRefreshJob(eventBindingServiceProperties, 60);
+        return new KafkaTopicPartitionRefreshJob(eventBindingServiceProperties, 0);
     }
 
     @Bean(name = EVENT_HANDLER_ANNOTATION_BEAN_POST_PROCESSOR_NAME)

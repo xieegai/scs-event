@@ -312,11 +312,11 @@ public abstract class EventBindingUtils {
 
     /**
      * Get the event payload class by binding name
-     * @param bindingName the binding name
+     * @param eventName the binding event name
      * @return the cached event payload Class
      */
-    public static Class<?> getEventPayloadClass(String bindingName) {
-        return channelEventMap.get(bindingName);
+    public static Class<?> getEventPayloadClass(String eventName) {
+        return channelEventMap.get(eventName);
     }
 
     /**
@@ -343,6 +343,12 @@ public abstract class EventBindingUtils {
         return eventConsumerConfMap.get(eventPayloadClass);
     }
 
+    /**
+     * compose the *FULL* binding bean name
+     * @param simpleBindingName the simple binding name
+     * @param channel the sub channel of the binding
+     * @return the binding name with the sub-channel
+     */
     public static String composeEventChannelBeanName(String simpleBindingName, String channel) {
         if (StringUtils.hasText(channel)) {
             return simpleBindingName + CHANNEL_DELIM + channel;
@@ -350,10 +356,21 @@ public abstract class EventBindingUtils {
         return simpleBindingName;
     }
 
+    /**
+     * The util function to check if the listener class is registered
+     * @param listenerClass the listener class
+     * @return the check result
+     */
     public static boolean isListenerClassRegistered(Class<?> listenerClass) {
         return listenerClasses.contains(listenerClass);
     }
 
+    /**
+     * Resolve the the destination with the event payload class and the channel
+     * @param eventPayloadClass the event payload class
+     * @param channel the channel
+     * @return the resolved destination
+     */
     public static String resolveDestination(Class<?> eventPayloadClass, String channel) {
         String eventName = resolveEventBeanName(eventPayloadClass);
         return composeEventChannelBeanName(eventName, channel);

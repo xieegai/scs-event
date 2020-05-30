@@ -8,5 +8,6 @@ public @interface EventProducer {
   Class<?> event();
   String binder() default "";
   String[] channels() default {};
-  int partitionCount() default 1;
+  boolean usePartitionKey() default false;
+  int partitions() default 0;
 }

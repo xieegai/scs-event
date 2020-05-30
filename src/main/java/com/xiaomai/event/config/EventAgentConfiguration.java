@@ -34,7 +34,7 @@
 
 package com.xiaomai.event.config;
 
-import com.xiaomai.event.kafka.BinderPartitionSelector;
+import com.xiaomai.event.partition.BinderPartitionSelector;
 import com.xiaomai.event.lifecycle.DefaultEventLifecycle;
 import com.xiaomai.event.lifecycle.IEventLifecycle;
 import com.xiaomai.event.EventAgentFactory;
@@ -51,6 +51,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @Slf4j
 public class EventAgentConfiguration {
+    public static final String EVENT_BINDER_PARTITION_SELECTOR_NAME =
+        "binderPartitionSelector";
+
     @Bean
     public EventAgentFactory eventAgentFactory(IEventLifecycle eventLifecycle, BinderAwareChannelResolver resolver) {
         EventAgentFactory agentFactory = new EventAgentFactory(eventLifecycle, resolver);
@@ -65,7 +68,7 @@ public class EventAgentConfiguration {
         return new DefaultEventLifecycle();
     }
 
-    @Bean(name = "binderPartitionSelector")
+    @Bean(name = EVENT_BINDER_PARTITION_SELECTOR_NAME)
     public BinderPartitionSelector binderPartitionSelector() {
         return new BinderPartitionSelector();
     }

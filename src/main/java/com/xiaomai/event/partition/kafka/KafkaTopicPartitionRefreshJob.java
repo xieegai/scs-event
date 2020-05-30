@@ -1,4 +1,20 @@
-package com.xiaomai.event.kafka;
+/*
+ * This file is part of scs-event.
+ *
+ * scs-event is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * scs-event is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with scs-event.  If not, see <https://www.gnu.org/licenses/>.
+ */
+package com.xiaomai.event.partition.kafka;
 
 import com.google.common.collect.ImmutableMap;
 import com.xiaomai.event.config.EventBindingServiceProperties;
@@ -21,6 +37,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * The kafka topic partition refresh job
+ * @author baihe
+ */
 @Slf4j
 public class KafkaTopicPartitionRefreshJob implements InitializingBean {
 
@@ -29,16 +49,19 @@ public class KafkaTopicPartitionRefreshJob implements InitializingBean {
     private static final String SCS_BROKER_KEY = "spring.cloud.stream.kafka.binder.brokers";
 
     /**
-     * 心跳时长（秒）
+     * the refresh interval
+     * if 0 is set, the refresh routine is disabled
      */
     private final int refreshInterval;
 
     /**
-     * 心跳任务的线程池
+     * the thread pool scheduled executor to handle the refresh routine
      */
     private final ScheduledExecutorService executorService;
 
-
+    /**
+     * the event binding service properties to retrieve the binder properties
+     */
     private final EventBindingServiceProperties eventBindingServiceProperties;
 
 
@@ -52,9 +75,9 @@ public class KafkaTopicPartitionRefreshJob implements InitializingBean {
     }
 
     /**
-     * 心跳函数
+     * heartbeat function to refresh the topic partitions
      */
-    private synchronized void refresh() {
+    private synchronized void refreshTopicPartitions() {
         EventBindingUtils.getEventProducerConfMap().forEach((eventPayloadClass, pconf) -> {
           if (pconf.channels().length > 0) {
               for (String channel: pconf.channels()) {
@@ -70,6 +93,12 @@ public class KafkaTopicPartitionRefreshJob implements InitializingBean {
         });
     }
 
+    /**
+     * Get the partition count from the specified topic and binder
+     * @param topic the kafka topic
+     * @param binder the kafka binder name
+     * @return the partition count of the topic
+     */
     private int getTopicPartition(String topic, String binder) {
         BinderProperties binderProperties = eventBindingServiceProperties.getBinders()
             .get(StringUtils.hasText(binder) ? binder : eventBindingServiceProperties.getDefaultBinder());
@@ -97,16 +126,24 @@ public class KafkaTopicPartitionRefreshJob implements InitializingBean {
     }
 
     /**
-     * 初始化心跳
-     * @throws Exception
+     * the after properties set hook
      */
     @Override
-    public void afterPropertiesSet() throws Exception {
-        refresh();
-//        executorService.scheduleAtFixedRate(this::refresh, 0,
-//          refreshInterval, TimeUnit.SECONDS);
+    public void afterPropertiesSet() {
+        // refresh the topic partitions at the beginning
+        refreshTopicPartitions();
+        // if the refresh heartbeat interval is set, refresh the topic partition periodically
+        if (refreshInterval > 0) {
+            executorService.scheduleAtFixedRate(this::refreshTopicPartitions, 0,
+                refreshInterval, TimeUnit.SECONDS);
+        }
     }
 
+    /**
+     * Util function to transform the binder
+     * @param binderProperties the given binder properties
+     * @return the parsed admin client properties
+     */
     private static Map<String, Object> parseAdminClientProperties(BinderProperties binderProperties) {
         Object brokers = binderProperties.getEnvironment().get(SCS_BROKER_KEY);
         return ImmutableMap.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);

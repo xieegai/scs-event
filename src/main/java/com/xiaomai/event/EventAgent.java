@@ -144,6 +144,7 @@ public class EventAgent<T> {
             partitionFields.stream().map(f -> ReflectionUtils.getField(f, payload)).filter(
             Objects::nonNull).map(String::valueOf).collect(Collectors.joining(DELIM_PARTITION_KEY))
             : Math.abs(payload.hashCode());
+        // compose the *FULL* partition key to encode the destination into it
         final Object partitionKey = PartitionRouteUtil.composePartitionKey(payload, channel, payloadKey);
 
         Map<String, Object> eventHeaders = new HashMap<String, Object>() {

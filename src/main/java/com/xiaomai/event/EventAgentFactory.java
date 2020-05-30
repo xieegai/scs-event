@@ -59,10 +59,20 @@ public class EventAgentFactory {
 
     private static EventAgentFactory INSTANCE;
 
+    /**
+     * Cache the singleton instance
+     * @param instance the singleton
+     */
     public static void setInstacne(EventAgentFactory instance) {
         EventAgentFactory.INSTANCE = instance;
     }
 
+    /**
+     * The factory function to create the agent
+     * @param payloadClass the event payload class
+     * @param <T> the event payload class template type
+     * @return the created agent
+     */
     public static <T> EventAgent<T> createAgent(Class<T> payloadClass) {
         return new EventAgent<>(payloadClass, INSTANCE.appName,
             INSTANCE.eventLifecycle, INSTANCE.resolver);

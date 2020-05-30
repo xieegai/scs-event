@@ -48,16 +48,23 @@ import java.lang.annotation.*;
 public @interface EventHandler {
 	Class<?> value();
 
+	/**
+	 * the binder name of the event handler
+	 */
+	String binder() default "";
+
 	String condition() default "";
 
 	String copyHeaders() default "true";
 
 	/**
-	 * 该事件的消费组
-	 * 默认为空，使用${spring.application.name}
+     * the event consumer group
 	 */
 	String group() default "";
 
+	/**
+	 * the event channel white list
+	 */
 	String[] channels() default {};
 
 	int concurrency() default 1;

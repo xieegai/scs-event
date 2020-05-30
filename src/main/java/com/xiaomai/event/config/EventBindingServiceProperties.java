@@ -40,6 +40,7 @@ import com.xiaomai.event.annotation.EventHandler;
 import com.xiaomai.event.annotation.EventMeta;
 import com.xiaomai.event.annotation.EventProducer;
 import com.xiaomai.event.constant.EventBuiltinAttr;
+import com.xiaomai.event.enums.EventBindingType;
 import com.xiaomai.event.utils.EventBindingUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -63,17 +64,16 @@ public class EventBindingServiceProperties extends BindingServiceProperties {
 
     public BindingProperties getBindingProperties(String bindingName) {
         String eventName = EventBindingUtils.resolveEventName(bindingName);
-
         Class<?> eventPayloadClass = EventBindingUtils.getEventPayloadClass(eventName);
         if (null == eventPayloadClass) {
             log.debug("event not registered: {}, fallback to spring cloud stream message", eventName);
             return super.getBindingProperties(bindingName);
         }
 
+        EventBindingType eventBindingType = EventBindingUtils.resolveEventBindingType(bindingName);
         BindingProperties bindingProperties = new BindingProperties();
         String channel = EventBindingUtils.resolveEventChannel(bindingName);
-        // Destination is named as the channel bean
-        String destination = EventBindingUtils.composeEventChannelBeanName(eventName, channel);
+        String destination = EventBindingUtils.resolveDestination(eventPayloadClass, channel);
         if (this.getBindings().containsKey(bindingName)) {
             BeanUtils.copyProperties(this.getBindings().get(bindingName), bindingProperties);
         }
@@ -81,63 +81,53 @@ public class EventBindingServiceProperties extends BindingServiceProperties {
             bindingProperties.setDestination(destination);
         }
 
-        EventProducer eventProducerConf = EventBindingUtils.getEventProducerConf(eventPayloadClass);
-        if (eventProducerConf != null) {
-            if (StringUtils.hasText(eventProducerConf.binder())) {
-                bindingProperties.setBinder(eventProducerConf.binder());
-            }
-        }
-
+        EventProducer eventProducer = EventBindingUtils.getEventProducerConf(eventPayloadClass);
         EventHandler eventHandler = EventBindingUtils.getEventHandlerConf(eventPayloadClass);
 
-        // Customize the consumer group
-        if (eventHandler != null && StringUtils.hasText(eventHandler.group())) {
-            bindingProperties.setGroup(eventHandler.group());
-        } else {
-            bindingProperties.setGroup(appName);
-        }
+        if (eventBindingType == EventBindingType.OUTPUT) {
+            if (eventProducer != null && StringUtils.hasText(eventProducer.binder())) {
+                bindingProperties.setBinder(eventProducer.binder());
+            }
+            ProducerProperties producerProperties = bindingProperties.getProducer();
+            if (producerProperties == null) {
+                producerProperties = new ProducerProperties();
+                bindingProperties.setProducer(producerProperties);
 
-
-        if (eventHandler != null) {
-            // initialize the consumer properties
-            ConsumerProperties consumerProperties = bindingProperties.getConsumer();
-            if (null != consumerProperties) {
-                if (eventHandler.concurrency() > 1) {
-                    consumerProperties.setConcurrency(eventHandler.concurrency());
+                if (null != eventProducer && eventProducer.usePartitionKey()
+                    && null == producerProperties.getPartitionKeyExpression()) {
+                    SpelExpressionParser parser = new SpelExpressionParser();
+                    Expression partitionExpr = parser
+                        .parseExpression("headers['" + EventBuiltinAttr.EVENT_KEY.getKey() + "']");
+                    producerProperties.setPartitionKeyExpression(partitionExpr);
                 }
-                if (eventHandler.maxAttempts() > 1) {
-                    consumerProperties.setMaxAttempts(eventHandler.maxAttempts());
+                if (null != eventProducer && eventProducer.partitions() > 0) {
+                    producerProperties.setPartitionCount(eventProducer.partitions());
+                } else {
+                    producerProperties.setPartitionSelectorName(EventAgentConfiguration.EVENT_BINDER_PARTITION_SELECTOR_NAME);
                 }
             }
-        }
-
-        EventMeta eventMeta = EventBindingUtils.resolveEventMeta(eventPayloadClass);
-        ProducerProperties producerProperties = bindingProperties.getProducer();
-        if (producerProperties == null) {
-            producerProperties = new ProducerProperties();
-            bindingProperties.setProducer(producerProperties);
-
-            if (null != eventMeta && eventMeta.partitionOn().length > 0
-                && null == producerProperties.getPartitionKeyExpression()) {
-                SpelExpressionParser parser = new SpelExpressionParser();
-                Expression partitionExpr = parser
-                    .parseExpression("headers['" + EventBuiltinAttr.EVENT_KEY.getKey() + "']");
-                producerProperties.setPartitionKeyExpression(partitionExpr);
-
-                if (null != eventProducerConf && eventProducerConf.partitionCount() > 1) {
-                    producerProperties.setPartitionCount(eventProducerConf.partitionCount());
+        } else {
+            bindingProperties.setGroup(appName);
+            if (eventHandler != null) {
+                if (StringUtils.hasText(eventHandler.binder())) {
+                    bindingProperties.setBinder(eventHandler.binder());
                 }
-
-                producerProperties.setPartitionSelectorName("binderPartitionSelector");
+                if (StringUtils.hasText(eventHandler.group())) {
+                    bindingProperties.setGroup(eventHandler.group());
+                }
+                // initialize the consumer properties
+                ConsumerProperties consumerProperties = bindingProperties.getConsumer();
+                if (null != consumerProperties) {
+                    if (eventHandler.concurrency() > 1) {
+                        consumerProperties.setConcurrency(eventHandler.concurrency());
+                    }
+                    if (eventHandler.maxAttempts() > 1) {
+                        consumerProperties.setMaxAttempts(eventHandler.maxAttempts());
+                    }
+                }
             }
         }
 
         return bindingProperties;
-    }
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        super.afterPropertiesSet();
-
     }
 }
