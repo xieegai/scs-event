@@ -37,7 +37,6 @@ package com.xiaomai.event.config;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.xiaomai.event.annotation.EventHandler;
-import com.xiaomai.event.annotation.EventMeta;
 import com.xiaomai.event.annotation.EventProducer;
 import com.xiaomai.event.constant.EventBuiltinAttr;
 import com.xiaomai.event.enums.EventBindingType;

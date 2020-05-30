@@ -29,6 +29,7 @@ import org.apache.kafka.common.KafkaFuture;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.stream.config.BinderProperties;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
+import org.springframework.core.env.Environment;
 import org.springframework.util.StringUtils;
 
 import java.util.Collections;
@@ -146,6 +147,20 @@ public class KafkaTopicPartitionRefreshJob implements InitializingBean {
      */
     private static Map<String, Object> parseAdminClientProperties(BinderProperties binderProperties) {
         Object brokers = binderProperties.getEnvironment().get(SCS_BROKER_KEY);
+        if (brokers == null) {
+            String[] tokens = SCS_BROKER_KEY.split("\\.");
+            Map<String, Object> container = binderProperties.getEnvironment();
+            int i = 0;
+            for (; i < tokens.length - 1; i++) {
+                String token = tokens[i];
+                if (container.containsKey(token)) {
+                    container = (Map<String, Object>) container.get(token);
+                }
+            }
+            if (i == tokens.length - 1) {
+                brokers = container.get(tokens[i]);
+            }
+        }
         return ImmutableMap.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
     }
 }

@@ -117,7 +117,7 @@ public class EventAgent<T> {
      * @return the event sequence of the dispatched event
      */
     public String triggerEvent(T payload) {
-        return triggerEvent(payload, new HashMap<>(), null);
+        return triggerEvent(payload, null);
     }
 
     /**
@@ -127,7 +127,7 @@ public class EventAgent<T> {
      * @return the event sequence of the dispatched event
      */
     public String triggerEvent(T payload, String channel) {
-        return triggerEvent(payload, new HashMap<>(), channel);
+        return triggerEvent(payload, new HashMap<>(), null, channel);
     }
 
     /**
@@ -137,15 +137,19 @@ public class EventAgent<T> {
      * @param channel the sub-channel of event
      * @return the event sequence of the dispatched event
      */
-    public String triggerEvent(T payload, Map<String, Object> eventAttrs, String channel) {
+    public String triggerEvent(T payload, Map<String, Object> eventAttrs, Object partitionKey, String channel) {
         String eventSeq = eventLifecycle.onIssue(payload, eventAttrs);
 
-        final Object payloadKey = (!CollectionUtils.isEmpty(partitionFields)) ?
-            partitionFields.stream().map(f -> ReflectionUtils.getField(f, payload)).filter(
-            Objects::nonNull).map(String::valueOf).collect(Collectors.joining(DELIM_PARTITION_KEY))
-            : Math.abs(payload.hashCode());
-        // compose the *FULL* partition key to encode the destination into it
-        final Object partitionKey = PartitionRouteUtil.composePartitionKey(payload, channel, payloadKey);
+        if (null == partitionKey) {
+            final Object payloadKey = (!CollectionUtils.isEmpty(partitionFields)) ?
+                partitionFields.stream().map(f -> ReflectionUtils.getField(f, payload)).filter(
+                    Objects::nonNull).map(String::valueOf)
+                    .collect(Collectors.joining(DELIM_PARTITION_KEY))
+                : Math.abs(payload.hashCode());
+            // compose the *FULL* partition key to encode the destination into it
+            partitionKey = PartitionRouteUtil
+                .composePartitionKey(payload, channel, payloadKey);
+        }
 
         Map<String, Object> eventHeaders = new HashMap<String, Object>() {
             {
