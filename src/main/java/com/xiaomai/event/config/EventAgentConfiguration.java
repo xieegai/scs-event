@@ -38,6 +38,7 @@ import com.xiaomai.event.partition.BinderPartitionSelector;
 import com.xiaomai.event.lifecycle.DefaultEventLifecycle;
 import com.xiaomai.event.lifecycle.IEventLifecycle;
 import com.xiaomai.event.EventAgentFactory;
+import com.xiaomai.event.partition.HeaderPartitionKeyExtractor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
@@ -53,6 +54,9 @@ import org.springframework.context.annotation.Configuration;
 public class EventAgentConfiguration {
     public static final String EVENT_BINDER_PARTITION_SELECTOR_NAME =
         "binderPartitionSelector";
+
+    public static final String EVENT_HEADER_PARTITION_KEY_EXTRACTOR_NAME =
+        "headerPartitionKeyExtractor";
 
     @Bean
     public EventAgentFactory eventAgentFactory(IEventLifecycle eventLifecycle, BinderAwareChannelResolver resolver) {
@@ -71,5 +75,10 @@ public class EventAgentConfiguration {
     @Bean(name = EVENT_BINDER_PARTITION_SELECTOR_NAME)
     public BinderPartitionSelector binderPartitionSelector() {
         return new BinderPartitionSelector();
+    }
+
+    @Bean(name = EVENT_HEADER_PARTITION_KEY_EXTRACTOR_NAME)
+    public HeaderPartitionKeyExtractor headerPartitionKeyExtractor() {
+        return new HeaderPartitionKeyExtractor();
     }
 }

@@ -9,5 +9,5 @@ public @interface EventProducer {
   String binder() default "";
   String[] channels() default {};
   boolean usePartitionKey() default false;
-  int partitions() default 0;
+  int partitions() default 1;
 }

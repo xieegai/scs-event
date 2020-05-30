@@ -38,9 +38,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.xiaomai.event.annotation.EventHandler;
 import com.xiaomai.event.annotation.EventProducer;
-import com.xiaomai.event.constant.EventBuiltinAttr;
 import com.xiaomai.event.enums.EventBindingType;
 import com.xiaomai.event.utils.EventBindingUtils;
+import com.xiaomai.event.utils.PartitionRouteUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,8 +49,6 @@ import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.config.BindingProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
-import org.springframework.expression.Expression;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.util.StringUtils;
 
 @ConfigurationProperties("spring.cloud.stream")
@@ -92,17 +90,15 @@ public class EventBindingServiceProperties extends BindingServiceProperties {
                 producerProperties = new ProducerProperties();
                 bindingProperties.setProducer(producerProperties);
 
-                if (null != eventProducer && eventProducer.usePartitionKey()
-                    && null == producerProperties.getPartitionKeyExpression()) {
-                    SpelExpressionParser parser = new SpelExpressionParser();
-                    Expression partitionExpr = parser
-                        .parseExpression("headers['" + EventBuiltinAttr.EVENT_KEY.getKey() + "']");
-                    producerProperties.setPartitionKeyExpression(partitionExpr);
-                }
-                if (null != eventProducer && eventProducer.partitions() > 0) {
-                    producerProperties.setPartitionCount(eventProducer.partitions());
-                } else {
+                if (null != eventProducer && eventProducer.usePartitionKey()) {
+                    producerProperties.setPartitionKeyExtractorName(EventAgentConfiguration.EVENT_HEADER_PARTITION_KEY_EXTRACTOR_NAME);
                     producerProperties.setPartitionSelectorName(EventAgentConfiguration.EVENT_BINDER_PARTITION_SELECTOR_NAME);
+                }
+                if (null != eventProducer && eventProducer.partitions() > 1) {
+                    producerProperties.setPartitionCount(eventProducer.partitions());
+                }
+                if (PartitionRouteUtil.getPartitionCount(destination) > 1) {
+                    producerProperties.setPartitionCount(PartitionRouteUtil.getPartitionCount(destination));
                 }
             }
         } else {

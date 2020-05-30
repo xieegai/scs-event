@@ -85,11 +85,21 @@ public class KafkaTopicPartitionRefreshJob implements InitializingBean {
                   String destination = EventBindingUtils.resolveDestination(eventPayloadClass, channel);
                   int channelPartCount = getTopicPartition(destination, pconf.binder());
                   PartitionRouteUtil.updateDestinationPartitionCount(destination, channelPartCount);
+
+                  eventBindingServiceProperties
+                      .getProducerProperties(
+                          EventBindingUtils.composeEventChannelBeanName(
+                              EventBindingUtils.resolveOutputBindingName(eventPayloadClass), channel))
+                      .setPartitionCount(channelPartCount);
               }
           } else {
               String destination = EventBindingUtils.resolveDestination(eventPayloadClass, null);
               int partCount = getTopicPartition(destination, pconf.binder());
               PartitionRouteUtil.updateDestinationPartitionCount(destination, partCount);
+
+              eventBindingServiceProperties
+                  .getProducerProperties(EventBindingUtils.resolveOutputBindingName(eventPayloadClass))
+                  .setPartitionCount(partCount);
           }
         });
     }

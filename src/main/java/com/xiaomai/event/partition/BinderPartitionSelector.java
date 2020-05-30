@@ -18,6 +18,6 @@ public class BinderPartitionSelector implements PartitionSelectorStrategy {
     @Override
     public int selectPartition(Object key, int partitionCount) {
         Integer partCount = PartitionRouteUtil.getPartitionCount(key);
-        return key.hashCode() % partCount;
+        return Math.abs(key.hashCode()) % partCount;
     }
 }
