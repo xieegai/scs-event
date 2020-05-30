@@ -34,6 +34,7 @@
 
 package com.xiaomai.event.config;
 
+import com.xiaomai.event.config.adapter.EventConverterConfigurer;
 import com.xiaomai.event.config.adapter.EventHandlerAnnotationBeanPostProcessor;
 import com.xiaomai.event.config.adapter.EventHandlerMethodFactory;
 import com.xiaomai.event.partition.kafka.KafkaTopicPartitionRefreshJob;
@@ -45,6 +46,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binding.BindingService;
+import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.config.ContentTypeConfiguration;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
@@ -69,6 +72,12 @@ public class EventBindingConfiguration {
     public BindingService bindingService(EventBindingServiceProperties eventBindingServiceProperties,
                                          BinderFactory binderFactory, TaskScheduler taskScheduler) {
         return new BindingService(eventBindingServiceProperties, binderFactory, taskScheduler);
+    }
+
+    @Bean
+    public EventConverterConfigurer eventConverterConfigurer(EventBindingServiceProperties eventBindingServiceProperties,
+                                                             CompositeMessageConverterFactory compositeMessageConverterFactory) {
+        return new EventConverterConfigurer(eventBindingServiceProperties, compositeMessageConverterFactory);
     }
 
     @Bean

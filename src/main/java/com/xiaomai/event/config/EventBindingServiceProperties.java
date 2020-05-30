@@ -97,9 +97,6 @@ public class EventBindingServiceProperties extends BindingServiceProperties {
                 if (null != eventProducer && eventProducer.partitions() > 1) {
                     producerProperties.setPartitionCount(eventProducer.partitions());
                 }
-                if (PartitionRouteUtil.getPartitionCount(destination) > 1) {
-                    producerProperties.setPartitionCount(PartitionRouteUtil.getPartitionCount(destination));
-                }
             }
         } else {
             bindingProperties.setGroup(appName);
