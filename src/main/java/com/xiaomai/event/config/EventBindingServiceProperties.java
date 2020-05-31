@@ -90,7 +90,7 @@ public class EventBindingServiceProperties extends BindingServiceProperties {
                 bindingProperties.setProducer(producerProperties);
 
                 if (null != eventProducer) {
-                    if (eventProducer.partitionOnPayload()) {
+                    if (eventProducer.useEventKey()) {
                         producerProperties.setPartitionKeyExtractorName(EventAgentConfiguration.EVENT_HEADER_PARTITION_KEY_EXTRACTOR_NAME);
                     }
                     if (eventProducer.partitions() > 1) {
