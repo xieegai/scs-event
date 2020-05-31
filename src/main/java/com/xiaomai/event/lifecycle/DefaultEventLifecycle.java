@@ -38,7 +38,7 @@ public class DefaultEventLifecycle implements IEventLifecycle {
     public String onIssue(String eventSeq, Object payload, Map<String, Object> eventAttrs) {
         String issueEventSeq = StringUtils.hasText(eventSeq) ? eventSeq : genEventSeq(payload, eventAttrs);
         log.info("Mark event {}, {} pending",
-                StructuredArguments.keyValue("eventId", eventSeq),
+                StructuredArguments.keyValue("eventId", issueEventSeq),
                 StructuredArguments.keyValue("eventPayloadClass", payload.getClass().getName()));
         return eventSeq;
     }
