@@ -40,7 +40,6 @@ import com.xiaomai.event.annotation.EventHandler;
 import com.xiaomai.event.annotation.EventProducer;
 import com.xiaomai.event.enums.EventBindingType;
 import com.xiaomai.event.utils.EventBindingUtils;
-import com.xiaomai.event.utils.PartitionRouteUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -90,12 +89,15 @@ public class EventBindingServiceProperties extends BindingServiceProperties {
                 producerProperties = new ProducerProperties();
                 bindingProperties.setProducer(producerProperties);
 
-                if (null != eventProducer && eventProducer.usePartitionKey()) {
-                    producerProperties.setPartitionKeyExtractorName(EventAgentConfiguration.EVENT_HEADER_PARTITION_KEY_EXTRACTOR_NAME);
-                    producerProperties.setPartitionSelectorName(EventAgentConfiguration.EVENT_BINDER_PARTITION_SELECTOR_NAME);
-                }
-                if (null != eventProducer && eventProducer.partitions() > 1) {
-                    producerProperties.setPartitionCount(eventProducer.partitions());
+                if (null != eventProducer) {
+                    if (eventProducer.partitionOnPayload()) {
+                        producerProperties.setPartitionKeyExtractorName(EventAgentConfiguration.EVENT_HEADER_PARTITION_KEY_EXTRACTOR_NAME);
+                    }
+                    if (eventProducer.partitions() > 1) {
+                        producerProperties.setPartitionCount(eventProducer.partitions());
+                    } else if (eventProducer.partitions() == 0) {
+                        producerProperties.setPartitionSelectorName(EventAgentConfiguration.EVENT_BINDER_PARTITION_SELECTOR_NAME);
+                    }
                 }
             }
         } else {
