@@ -35,16 +35,11 @@ public abstract class AbstractEventLifecycle extends DefaultEventLifecycle imple
 
     private ApplicationContext applicationContext;
 
-    @Override
-    public String genEventSeq(Object payload, Map<String, Object> eventAttrs) {
-        EventMeta eventMeta = getEventMeta(payload.getClass());
-
-        if (!eventMeta.enableAudit())
-            return super.genEventSeq(payload, eventAttrs);
-        return makeRecord(eventMeta, payload, eventAttrs);
+    public String makeRecord(EventMeta eventMeta, Object payload, Map<String, Object> eventAttrs, String channel) {
+        return onRecord(eventMeta, payload, eventAttrs, channel);
     }
 
-    public abstract String makeRecord(EventMeta eventMeta, Object payload, Map<String, Object> eventAttrs);
+    public abstract String onRecord(EventMeta eventMeta, Object payload, Map<String, Object> eventAttrs, String channel);
 
     @Override
     public boolean onExecute(String eventSeq, String consumerKey, Class<?> payloadClass) {

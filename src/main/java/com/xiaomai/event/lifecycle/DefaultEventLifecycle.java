@@ -17,6 +17,7 @@
 
 package com.xiaomai.event.lifecycle;
 
+import com.xiaomai.event.annotation.EventMeta;
 import com.xiaomai.event.utils.StructuredArguments;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -30,16 +31,21 @@ import org.springframework.util.StringUtils;
 @Slf4j
 public class DefaultEventLifecycle implements IEventLifecycle {
 
-    public String genEventSeq(Object payload, Map<String, Object> eventAttrs) {
+    public String makeRecord(EventMeta eventMeta, Object payload, Map<String, Object> eventAttrs, String channel) {
         return UUID.randomUUID().toString();
     }
 
     @Override
     public String onIssue(String eventSeq, Object payload, Map<String, Object> eventAttrs, String channel) {
-        String issueEventSeq = StringUtils.hasText(eventSeq) ? eventSeq : genEventSeq(payload, eventAttrs);
+        if (!StringUtils.hasText(eventSeq)) {
+            EventMeta eventMeta = getEventMeta(payload.getClass());
+            eventSeq = makeRecord(eventMeta, payload, eventAttrs, channel);
+        }
+
         log.info("Mark event {}, {} pending",
-                StructuredArguments.keyValue("eventId", issueEventSeq),
-                StructuredArguments.keyValue("eventPayloadClass", payload.getClass().getName()));
+            StructuredArguments.keyValue("eventId", eventSeq),
+            StructuredArguments.keyValue("eventPayloadClass", payload.getClass().getName()));
+
         return eventSeq;
     }
 
