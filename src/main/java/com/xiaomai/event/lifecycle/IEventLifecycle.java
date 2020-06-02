@@ -38,7 +38,7 @@ public interface IEventLifecycle {
      * @return 事件序列号
      */
     default String onIssue(Object payload, Map<String, Object> eventAttrs) {
-        return onIssue(null, payload, eventAttrs);
+        return onIssue(null, payload, eventAttrs, null);
     }
 
     /**
@@ -48,7 +48,7 @@ public interface IEventLifecycle {
      * @param eventAttrs 事件属性
      * @return 事件序列号
      */
-    String onIssue(String eventSeq, Object payload, Map<String, Object> eventAttrs);
+    String onIssue(String eventSeq, Object payload, Map<String, Object> eventAttrs, String channel);
 
     /**
      * 当消费者开始消费时调用

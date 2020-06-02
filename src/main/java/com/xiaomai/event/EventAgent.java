@@ -147,7 +147,7 @@ public class EventAgent<T> {
                     .collect(Collectors.joining(DELIM_PARTITION_KEY))
                 : Math.abs(payload.hashCode());
         }
-            // compose the *FULL* partition key to encode the destination into it
+        // compose the *FULL* partition key to encode the destination into it
         final Object partitionKey = PartitionRouteUtil
                 .composePartitionKey(payload, channel, payloadKey);
 
@@ -161,6 +161,7 @@ public class EventAgent<T> {
                 put(EventBuiltinAttr.EVENT_TRIGGER_APP.getKey(), appName);
             }
         };
+        eventHeaders.putAll(eventAttrs);
 
         String simpleBindingName = EventBindingUtils.resolveOutputBindingName(payloadClass);
         if (StringUtils.hasText(channel)) {
