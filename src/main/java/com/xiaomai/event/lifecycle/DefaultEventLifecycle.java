@@ -36,14 +36,15 @@ public class DefaultEventLifecycle implements IEventLifecycle {
     }
 
     @Override
-    public String onIssue(String eventSeq, Object payload, Map<String, Object> eventAttrs, String channel) {
+    public String onIssue(String eventSeq, String producerKey, Object payload, Map<String, Object> eventAttrs, String channel) {
         if (!StringUtils.hasText(eventSeq)) {
             EventMeta eventMeta = getEventMeta(payload.getClass());
             eventSeq = makeRecord(eventMeta, payload, eventAttrs, channel);
         }
 
-        log.info("Mark event {}, {} pending",
+        log.info("Mark event {}, {}, {} pending",
             StructuredArguments.keyValue("eventId", eventSeq),
+            StructuredArguments.keyValue("producerKey", producerKey),
             StructuredArguments.keyValue("eventPayloadClass", payload.getClass().getName()));
 
         return eventSeq;

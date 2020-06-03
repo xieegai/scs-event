@@ -37,18 +37,19 @@ public interface IEventLifecycle {
      * @param eventAttrs 事件属性
      * @return 事件序列号
      */
-    default String onIssue(Object payload, Map<String, Object> eventAttrs) {
-        return onIssue(null, payload, eventAttrs, null);
+    default String onIssue(Object payload, String producerKey, Map<String, Object> eventAttrs) {
+        return onIssue(null, producerKey, payload, eventAttrs, null);
     }
 
     /**
      * 当生产者开始生产事件时调用
      * @param eventSeq 事件序列号
+     * @param producerKey 生产者标识
      * @param payload 事件payload信息
      * @param eventAttrs 事件属性
      * @return 事件序列号
      */
-    String onIssue(String eventSeq, Object payload, Map<String, Object> eventAttrs, String channel);
+    String onIssue(String eventSeq, String producerKey, Object payload, Map<String, Object> eventAttrs, String channel);
 
     /**
      * 当消费者开始消费时调用

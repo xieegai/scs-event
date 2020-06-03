@@ -127,7 +127,10 @@ public class EventAgent<T> {
      * @return the event sequence of the dispatched event
      */
     public String triggerEvent(T payload, String channel) {
-        return triggerEvent(payload, new HashMap<>(), null, channel);
+        return triggerEvent(payload, appName, new HashMap<>(), null, channel);
+    }
+    public String triggerEvent(T payload, String producer, String channel) {
+        return triggerEvent(payload, producer, new HashMap<>(), null, channel);
     }
 
     /**
@@ -137,8 +140,8 @@ public class EventAgent<T> {
      * @param channel the sub-channel of event
      * @return the event sequence of the dispatched event
      */
-    public String triggerEvent(T payload, Map<String, Object> eventAttrs, Object payloadKey, String channel) {
-        String eventSeq = eventLifecycle.onIssue(payload, eventAttrs);
+    public String triggerEvent(T payload, String producer, Map<String, Object> eventAttrs, Object payloadKey, String channel) {
+        String eventSeq = eventLifecycle.onIssue(payload, producer, eventAttrs);
 
         if (null == payloadKey) {
             payloadKey = (!CollectionUtils.isEmpty(partitionFields)) ?
