@@ -31,7 +31,7 @@ import org.springframework.util.StringUtils;
 @Slf4j
 public class DefaultEventLifecycle implements IEventLifecycle {
 
-    public String makeRecord(EventMeta eventMeta, Object payload, Map<String, Object> eventAttrs, String channel) {
+    public String makeRecord(EventMeta eventMeta, String producerKey, Object payload, Map<String, Object> eventAttrs, String channel) {
         return UUID.randomUUID().toString();
     }
 
@@ -39,7 +39,7 @@ public class DefaultEventLifecycle implements IEventLifecycle {
     public String onIssue(String eventSeq, String producerKey, Object payload, Map<String, Object> eventAttrs, String channel) {
         if (!StringUtils.hasText(eventSeq)) {
             EventMeta eventMeta = getEventMeta(payload.getClass());
-            eventSeq = makeRecord(eventMeta, payload, eventAttrs, channel);
+            eventSeq = makeRecord(eventMeta, producerKey, payload, eventAttrs, channel);
         }
 
         log.info("Mark event {}, {}, {} pending",
