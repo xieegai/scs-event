@@ -73,8 +73,8 @@ public class EventAgentFactory {
      * @param <T> the event payload class template type
      * @return the created agent
      */
-    public static <T> EventAgent<T> createAgent(Class<T> payloadClass) {
-        return new EventAgent<>(payloadClass, INSTANCE.appName,
+    public static <T> EventAgent<T> createAgent(Class<T> payloadClass, String channel) {
+        return new EventAgent<>(payloadClass, channel, INSTANCE.appName,
             INSTANCE.eventLifecycle, INSTANCE.resolver);
     }
 }

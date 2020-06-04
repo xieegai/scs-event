@@ -72,28 +72,32 @@ public class EventAgent<T> {
 
     private final EventMeta eventMeta;
 
+    private final String channel;
+
     private final String appName;
 
     private final IEventLifecycle eventLifecycle;
 
     private final BinderAwareChannelResolver resolver;
 
-    private static final Map<Class<?>, EventAgent> agentMap = new ConcurrentHashMap<>();
+    private static final Map<String, EventAgent> agentMap = new ConcurrentHashMap<>();
 
     private final List<Field> partitionFields;
 
     /**
      * The internal CONSTRUCTOR of event agent
      * @param payloadClass the event payload class
+     * @param channel the event channel
      * @param appName the application name
      * @param eventLifecycle the event life cycle proxy
      * @param resolver the spring-cloud-stream message channel resolver
      */
-    protected EventAgent(Class<T> payloadClass, String appName, IEventLifecycle eventLifecycle, BinderAwareChannelResolver resolver) {
+    protected EventAgent(Class<T> payloadClass, String channel, String appName, IEventLifecycle eventLifecycle, BinderAwareChannelResolver resolver) {
         this.appName = appName;
         this.eventLifecycle = eventLifecycle;
         this.resolver = resolver;
         this.payloadClass = payloadClass;
+        this.channel = channel;
         this.eventMeta = payloadClass.getDeclaredAnnotation(EventMeta.class);
         Assert.state(null != this.eventMeta, "the specified payloadClass is not marked with the meta annotation");
 
@@ -121,26 +125,34 @@ public class EventAgent<T> {
     }
 
     /**
-     * Trigger the event with payload on specified sub-channel
+     * Trigger the event with payload and partition key
      * @param payload the event payload
-     * @param channel the sub-channel of event
+     * @param payloadKey the event partition key
      * @return the event sequence of the dispatched event
      */
-    public String triggerEvent(T payload, String channel) {
-        return triggerEvent(payload, appName, new HashMap<>(), null, channel);
-    }
-    public String triggerEvent(T payload, String producer, String channel) {
-        return triggerEvent(payload, producer, new HashMap<>(), null, channel);
+    public String triggerEvent(T payload, Object payloadKey) {
+        return triggerEvent(payload, appName, new HashMap<>(), payloadKey);
     }
 
     /**
-     * Trigger the event with payload and attributes on specified sub-channel
+     * Trigger the event with payload, producer and partition key
      * @param payload the event payload
-     * @param eventAttrs the event attributes
-     * @param channel the sub-channel of event
+     * @param producer the event producer key
+     * @param payloadKey the event partition key
      * @return the event sequence of the dispatched event
      */
-    public String triggerEvent(T payload, String producer, Map<String, Object> eventAttrs, Object payloadKey, String channel) {
+    public String triggerEvent(T payload, String producer, Object payloadKey) {
+        return triggerEvent(payload, producer, new HashMap<>(), payloadKey);
+    }
+
+    /**
+     * Trigger the event with payload and attributes
+     * @param payload the event payload
+     * @param producer the event producer key
+     * @param eventAttrs the event attributes
+     * @return the event sequence of the dispatched event
+     */
+    public String triggerEvent(T payload, String producer, Map<String, Object> eventAttrs, Object payloadKey) {
         String eventSeq = eventLifecycle.onIssue(payload, producer, eventAttrs);
 
         if (null == payloadKey) {
@@ -181,11 +193,18 @@ public class EventAgent<T> {
     /**
      * Retrieve the EventAgent object by event payload class
      * @param payloadClass the event payload class
+     * @param channel the event sub channel
      * @return the EventAgent object of payload class
      * @param <T> the template type
      */
-    public static <T> EventAgent<T> of(Class<T> payloadClass) {
-        EventAgent<T> eventAgent = (EventAgent<T>)agentMap.computeIfAbsent(payloadClass, pclass -> EventAgentFactory.createAgent(payloadClass));
+    public static <T> EventAgent<T> of(Class<T> payloadClass, String channel) {
+        String agentKey = EventBindingUtils.resolveDestination(payloadClass, channel);
+        EventAgent<T> eventAgent = (EventAgent<T>)agentMap.computeIfAbsent(agentKey,
+          pclass -> EventAgentFactory.createAgent(payloadClass, channel));
         return eventAgent;
+    }
+
+    public static <T> EventAgent<T> of(Class<T> payloadClass) {
+        return of(payloadClass, null);
     }
 }
