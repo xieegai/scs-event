@@ -33,7 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.stream.aggregate.SharedBindingTargetRegistry;
 import org.springframework.cloud.stream.binder.Binding;
 import org.springframework.cloud.stream.binding.Bindable;
 import org.springframework.cloud.stream.binding.BindingService;
@@ -126,24 +125,6 @@ public class EventBindable implements InitializingBean, Bindable {
     private SubscribableChannelBindingTargetFactory eventChannelBindingTargetFactory;
 
     /**
-     * The shared registry to hold the binding target (channel)
-     */
-    @Autowired(required = false)
-    private SharedBindingTargetRegistry sharedBindingTargetRegistry;
-
-    /**
-     * Get the binding target (channel) from the shared registry
-     * @param name the name of the binding target
-     * @param bindingTargetType the binding target type
-     * @return the binding target
-     */
-    private <T> T locateSharedBindingTarget(String name, Class<T> bindingTargetType) {
-        return this.sharedBindingTargetRegistry != null
-                ? this.sharedBindingTargetRegistry.get(getNamespacePrefixedBindingTargetName(name), bindingTargetType)
-                : null;
-    }
-
-    /**
      * Get the absolute binding target name
      * @param name the simple target name
      * @return the absolute target name
@@ -184,15 +165,8 @@ public class EventBindable implements InitializingBean, Bindable {
                 inputChannelName = EventBindingUtils
                     .composeEventChannelBeanName(inputChannelName, channel);
             }
-            Object sharedBindingInputTarget = locateSharedBindingTarget(inputChannelName,
-                SubscribableChannel.class);
-            if (sharedBindingInputTarget != null) {
-                inputHolder = new BoundTargetHolder(inputChannelName, sharedBindingInputTarget,
-                    false);
-            } else {
-                inputHolder = new BoundTargetHolder(inputChannelName,
+            inputHolder = new BoundTargetHolder(inputChannelName,
                     eventChannelBindingTargetFactory.createInput(inputChannelName), true);
-            }
         }
 
         if (enableOutput) {
@@ -202,26 +176,9 @@ public class EventBindable implements InitializingBean, Bindable {
                 outputChannelName = EventBindingUtils
                     .composeEventChannelBeanName(outputChannelName, channel);
             }
-            Object sharedBindingOutputTarget = locateSharedBindingTarget(outputChannelName,
-                MessageChannel.class);
-            if (sharedBindingOutputTarget != null) {
-                outputHolder = new BoundTargetHolder(outputChannelName, sharedBindingOutputTarget,
-                    false);
-            } else {
-                outputHolder = new BoundTargetHolder(outputChannelName,
+            outputHolder = new BoundTargetHolder(outputChannelName,
                     eventChannelBindingTargetFactory.createOutput(outputChannelName), true);
-            }
-        }
-    }
 
-    /**
-     * @deprecated in favor of {@link #createAndBindInputs(BindingService)}
-     */
-    @Override
-    @Deprecated
-    public void bindInputs(BindingService bindingService) {
-        if (enableInput) {
-            this.createAndBindInputs(bindingService);
         }
     }
 
@@ -256,7 +213,8 @@ public class EventBindable implements InitializingBean, Bindable {
      * @param bindingService the binding service
      */
     @Override
-    public void bindOutputs(BindingService bindingService) {
+    public Collection<Binding<Object>> createAndBindOutputs(BindingService bindingService) {
+        List<Binding<Object>> bindings = new ArrayList<>();
         if (enableOutput) {
             if (log.isDebugEnabled()) {
                 log.debug(
@@ -267,9 +225,10 @@ public class EventBindable implements InitializingBean, Bindable {
                     log.debug(String.format("Binding %s:%s:%s", this.namespace, this.getClass(),
                         outputHolder.getName()));
                 }
-                bindingService.bindProducer(outputHolder.getBoundTarget(), outputHolder.getName());
+                bindings.add(bindingService.bindProducer(outputHolder.getBoundTarget(), outputHolder.getName()));
             }
         }
+        return bindings;
     }
 
     /**

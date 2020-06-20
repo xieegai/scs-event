@@ -30,7 +30,6 @@ import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.AutowireCandidateQualifier;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
-import org.springframework.cloud.stream.annotation.Bindings;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 
@@ -233,7 +232,6 @@ public abstract class EventBindingUtils {
         EventBindingType eventBindingType, Class<?> parentClass) {
         // register the factory bean to produce the binding target bean
         RootBeanDefinition factoryBeanDefinition = new RootBeanDefinition(EventBindable.class);
-        factoryBeanDefinition.addQualifier(new AutowireCandidateQualifier(Bindings.class, parentClass));
         ConstructorArgumentValues constructorArgumentValues = factoryBeanDefinition.getConstructorArgumentValues();
         constructorArgumentValues.addGenericArgumentValue(eventPayloadClass);
         constructorArgumentValues.addGenericArgumentValue(eventBindingType);

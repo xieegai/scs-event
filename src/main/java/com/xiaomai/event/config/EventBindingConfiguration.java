@@ -42,26 +42,35 @@ import com.xiaomai.event.lifecycle.IEventLifecycle;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.binder.BinderFactory;
 import org.springframework.cloud.stream.binding.BindingService;
-import org.springframework.cloud.stream.binding.MessageConverterConfigurer;
-import org.springframework.cloud.stream.config.BindingServiceProperties;
-import org.springframework.cloud.stream.config.ContentTypeConfiguration;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
-import org.springframework.integration.config.HandlerMethodArgumentResolversHolder;
 import org.springframework.integration.context.IntegrationContextUtils;
+import org.springframework.integration.handler.support.MapArgumentResolver;
+import org.springframework.integration.handler.support.PayloadExpressionArgumentResolver;
+import org.springframework.integration.handler.support.PayloadsArgumentResolver;
+import org.springframework.integration.support.NullAwarePayloadArgumentResolver;
+import org.springframework.lang.Nullable;
+import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.handler.annotation.support.HeaderMethodArgumentResolver;
+import org.springframework.messaging.handler.annotation.support.HeadersMethodArgumentResolver;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
+import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolver;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.validation.Validator;
+
+import java.util.LinkedList;
+import java.util.List;
 
 @Configuration
 @EnableConfigurationProperties({EventBindingServiceProperties.class})
-@Import({ContentTypeConfiguration.class})
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class EventBindingConfiguration {
 
@@ -91,13 +100,54 @@ public class EventBindingConfiguration {
         return new EventHandlerAnnotationBeanPostProcessor();
     }
 
+//    @Bean(IntegrationContextUtils.MESSAGE_HANDLER_FACTORY_BEAN_NAME)
     @Bean(name = "eventHandlerMethodFactory")
     public static MessageHandlerMethodFactory messageHandlerMethodFactory(CompositeMessageConverterFactory compositeMessageConverterFactory,
-                                                                          @Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVERS_BEAN_NAME) HandlerMethodArgumentResolversHolder ahmar,
+                                                                          @Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME) CompositeMessageConverter compositeMessageConverter,
+                                                                          @Nullable Validator validator, ConfigurableListableBeanFactory clbf,
                                                                           IEventLifecycle eventLifecycle) {
-        EventHandlerMethodFactory eventHandlerMethodFactory = new EventHandlerMethodFactory(eventLifecycle);
-        eventHandlerMethodFactory.setMessageConverter(compositeMessageConverterFactory.getMessageConverterForAllRegistered());
-        eventHandlerMethodFactory.setCustomArgumentResolvers(ahmar.getResolvers());
-        return eventHandlerMethodFactory;
+        EventHandlerMethodFactory messageHandlerMethodFactory = new EventHandlerMethodFactory(eventLifecycle);
+        messageHandlerMethodFactory.setMessageConverter(compositeMessageConverter);
+
+        /*
+         * We essentially do the same thing as the
+         * DefaultMessageHandlerMethodFactory.initArgumentResolvers(..). We can't do it as
+         * custom resolvers for two reasons. 1. We would have two duplicate (compatible)
+         * resolvers, so they would need to be ordered properly to ensure these new
+         * resolvers take precedence. 2.
+         * DefaultMessageHandlerMethodFactory.initArgumentResolvers(..) puts
+         * MessageMethodArgumentResolver before custom converters thus not allowing an
+         * override which kind of proves #1.
+         *
+         * In all, all this will be obsolete once https://jira.spring.io/browse/SPR-17503
+         * is addressed and we can fall back on core resolvers
+         */
+        List<HandlerMethodArgumentResolver> resolvers = new LinkedList<>();
+        resolvers.add(new SmartPayloadArgumentResolver(
+          compositeMessageConverter,
+          validator));
+        resolvers.add(new SmartMessageMethodArgumentResolver(
+          compositeMessageConverter));
+
+        resolvers.add(new HeaderMethodArgumentResolver(clbf.getConversionService(), clbf));
+        resolvers.add(new HeadersMethodArgumentResolver());
+
+        // Copy the order from Spring Integration for compatibility with SI 5.2
+        resolvers.add(new PayloadExpressionArgumentResolver());
+        resolvers.add(new NullAwarePayloadArgumentResolver(compositeMessageConverter));
+        PayloadExpressionArgumentResolver payloadExpressionArgumentResolver = new PayloadExpressionArgumentResolver();
+        payloadExpressionArgumentResolver.setBeanFactory(clbf);
+        resolvers.add(payloadExpressionArgumentResolver);
+        PayloadsArgumentResolver payloadsArgumentResolver = new PayloadsArgumentResolver();
+        payloadsArgumentResolver.setBeanFactory(clbf);
+        resolvers.add(payloadsArgumentResolver);
+        MapArgumentResolver mapArgumentResolver = new MapArgumentResolver();
+        mapArgumentResolver.setBeanFactory(clbf);
+        resolvers.add(mapArgumentResolver);
+
+        messageHandlerMethodFactory.setArgumentResolvers(resolvers);
+        messageHandlerMethodFactory.setValidator(validator);
+        return messageHandlerMethodFactory;
     }
+
 }
