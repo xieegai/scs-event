@@ -113,17 +113,17 @@ public class KafkaTopicPartitionRefreshJob implements InitializingBean {
                 Map<String, TopicDescription> topicDescriptions = null;
                 try {
                     topicDescriptions = all.get(1, TimeUnit.SECONDS);
+                    TopicDescription topicDescription = topicDescriptions.get(topic);
+                    partitions = topicDescription.partitions().size();
                 } catch (Exception e) {
-                    throw new ProvisioningException("Problems encountered with partitions finding", e);
+//                    throw new ProvisioningException("Problems encountered with partitions finding", e);
+                    log.error("Problems encountered with partitions finding: ", e);
+                    partitions = 1;
                 }
-                TopicDescription topicDescription = topicDescriptions.get(topic);
-                partitions = topicDescription.partitions().size();
                 return partitions;
             }
         }
-
         return 1;
-
     }
 
     /**
