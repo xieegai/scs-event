@@ -95,10 +95,8 @@ public class EventBindingBeansRegistrar implements ImportBeanDefinitionRegistrar
 
         //*IMPORTANT* replace the original BindingServiceProperties with {@link EventBindingServiceProperties}
         registry.removeBeanDefinition("spring.cloud.stream-" + BindingServiceProperties.class.getName());
-//        registry.removeBeanDefinition("messageHandlerMethodFactory");
         registry.removeBeanDefinition(IntegrationContextUtils.MESSAGE_HANDLER_FACTORY_BEAN_NAME);
         registry.removeBeanDefinition("messageConverterConfigurer");
-//        registry.removeBeanDefinition("streamBridgeUtils");
     }
 
     /**

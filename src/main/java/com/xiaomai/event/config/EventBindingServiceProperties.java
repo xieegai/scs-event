@@ -51,7 +51,6 @@ import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.context.annotation.Primary;
 import org.springframework.util.StringUtils;
 
-@Primary
 @ConfigurationProperties("spring.cloud.stream")
 @JsonInclude(Include.NON_DEFAULT)
 @Slf4j

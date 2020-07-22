@@ -37,39 +37,22 @@ package com.xiaomai.event.config;
 import com.xiaomai.event.config.adapter.EventConverterConfigurer;
 import com.xiaomai.event.config.adapter.EventHandlerAnnotationBeanPostProcessor;
 import com.xiaomai.event.config.adapter.EventHandlerMethodFactory;
-import com.xiaomai.event.partition.kafka.KafkaTopicPartitionRefreshJob;
 import com.xiaomai.event.lifecycle.IEventLifecycle;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
+import com.xiaomai.event.partition.kafka.KafkaTopicPartitionRefreshJob;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.context.FunctionRegistry;
-import org.springframework.cloud.stream.binder.BinderConfiguration;
-import org.springframework.cloud.stream.binder.BinderFactory;
-import org.springframework.cloud.stream.binder.BinderType;
-import org.springframework.cloud.stream.binder.BinderTypeRegistry;
-import org.springframework.cloud.stream.binder.DefaultBinderFactory;
+import org.springframework.cloud.stream.binder.*;
 import org.springframework.cloud.stream.binder.DefaultBinderFactory.Listener;
 import org.springframework.cloud.stream.binding.BindingService;
 import org.springframework.cloud.stream.config.BinderProperties;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
-import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
-import org.springframework.cloud.stream.function.StreamBridge;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
 import org.springframework.integration.context.IntegrationContextUtils;
 import org.springframework.integration.handler.support.MapArgumentResolver;
@@ -86,16 +69,18 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
 import org.springframework.validation.Validator;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.Map.Entry;
 
 @Configuration
 @EnableConfigurationProperties({EventBindingServiceProperties.class})
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class EventBindingConfiguration {
 
-    public static final String EVENT_HANDLER_ANNOTATION_BEAN_POST_PROCESSOR_NAME =
-            "eventHandlerAnnotationBeanPostProcessor";
+    private static final String EVENT_HANDLER_ANNOTATION_BEAN_POST_PROCESSOR_NAME =
+      "eventHandlerAnnotationBeanPostProcessor";
+    private static final String EVENT_HANDLER_FACTORY_BEAN_NAME =
+      "eventHandlerMethodFactory";
 
     @Autowired(required = false)
     private Collection<Listener> binderFactoryListeners;
@@ -135,8 +120,7 @@ public class EventBindingConfiguration {
         return new EventHandlerAnnotationBeanPostProcessor();
     }
 
-//    @Bean(IntegrationContextUtils.MESSAGE_HANDLER_FACTORY_BEAN_NAME)
-    @Bean(name = "eventHandlerMethodFactory")
+    @Bean(name = EVENT_HANDLER_FACTORY_BEAN_NAME)
     public static MessageHandlerMethodFactory messageHandlerMethodFactory(
         @Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME) CompositeMessageConverter compositeMessageConverter,
         @Nullable Validator validator, ConfigurableListableBeanFactory clbf,

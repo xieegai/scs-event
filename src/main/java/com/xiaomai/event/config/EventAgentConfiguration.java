@@ -40,8 +40,10 @@ import com.xiaomai.event.lifecycle.IEventLifecycle;
 import com.xiaomai.event.EventAgentFactory;
 import com.xiaomai.event.partition.HeaderPartitionKeyExtractor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
+import org.springframework.cloud.stream.function.FunctionConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -49,6 +51,7 @@ import org.springframework.context.annotation.Configuration;
  * @author baihe
  * date: 2017/11/24
  */
+@EnableAutoConfiguration(exclude = FunctionConfiguration.class)
 @Configuration
 @Slf4j
 public class EventAgentConfiguration {

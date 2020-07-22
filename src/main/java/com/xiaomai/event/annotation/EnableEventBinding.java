@@ -54,18 +54,10 @@ package com.xiaomai.event.annotation;
 import com.xiaomai.event.config.EventAgentConfiguration;
 import com.xiaomai.event.config.EventBindingBeansRegistrar;
 import com.xiaomai.event.config.EventBindingConfiguration;
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.config.BindingServiceConfiguration;
-import org.springframework.cloud.stream.function.EventFunctionConfiguration;
-import org.springframework.cloud.stream.function.FunctionConfiguration;
 import org.springframework.context.annotation.Import;
+
+import java.lang.annotation.*;
 
 /**
  * Annotation for event handler provider class
@@ -74,9 +66,8 @@ import org.springframework.context.annotation.Import;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @EnableBinding
-@AutoConfigureBefore(FunctionConfiguration.class)
 @Import({EventBindingBeansRegistrar.class,
-    EventFunctionConfiguration.class, EventAgentConfiguration.class, EventBindingConfiguration.class})
+    EventAgentConfiguration.class, EventBindingConfiguration.class})
 public @interface EnableEventBinding {
     EventProducer[] produce() default {};
     Class<?>[] listenerClass() default {};
