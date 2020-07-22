@@ -85,8 +85,8 @@ public class EventBindingConfiguration {
 
     @Bean
     public EventConverterConfigurer eventConverterConfigurer(EventBindingServiceProperties eventBindingServiceProperties,
-                                                             CompositeMessageConverterFactory compositeMessageConverterFactory) {
-        return new EventConverterConfigurer(eventBindingServiceProperties, compositeMessageConverterFactory);
+        @Qualifier("integrationArgumentResolverMessageConverter") CompositeMessageConverter compositeMessageConverter) {
+        return new EventConverterConfigurer(eventBindingServiceProperties, compositeMessageConverter);
     }
 
     @Bean
