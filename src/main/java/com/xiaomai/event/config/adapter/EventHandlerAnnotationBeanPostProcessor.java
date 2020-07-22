@@ -50,6 +50,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.cloud.stream.binding.StreamListenerErrorMessages;
 import org.springframework.cloud.stream.binding.StreamListenerParameterAdapter;
 import org.springframework.cloud.stream.binding.StreamListenerResultAdapter;
@@ -292,8 +293,9 @@ public class EventHandlerAnnotationBeanPostProcessor implements BeanPostProcesso
     private void injectAndPostProcessDependencies() {
         Collection<StreamListenerParameterAdapter> streamListenerParameterAdapters = this.applicationContext.getBeansOfType(StreamListenerParameterAdapter.class).values();
         Collection<StreamListenerResultAdapter> streamListenerResultAdapters = this.applicationContext.getBeansOfType(StreamListenerResultAdapter.class).values();
-        this.binderAwareChannelResolver = this.applicationContext.getBean(DestinationResolver.class);
-        this.messageHandlerMethodFactory = this.applicationContext.getBean(MessageHandlerMethodFactory.class);
+        this.binderAwareChannelResolver = this.applicationContext.getBean(
+            BinderAwareChannelResolver.class);
+        this.messageHandlerMethodFactory = this.applicationContext.getBean("eventHandlerMethodFactory", MessageHandlerMethodFactory.class);
         this.springIntegrationProperties = this.applicationContext.getBean(SpringIntegrationProperties.class);
 
         this.eventHandlerSetupMethodOrchestrators.addAll(

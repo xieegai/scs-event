@@ -60,7 +60,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.config.BindingServiceConfiguration;
+import org.springframework.cloud.stream.function.EventFunctionConfiguration;
+import org.springframework.cloud.stream.function.FunctionConfiguration;
 import org.springframework.context.annotation.Import;
 
 /**
@@ -70,7 +74,9 @@ import org.springframework.context.annotation.Import;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @EnableBinding
-@Import({EventAgentConfiguration.class, EventBindingBeansRegistrar.class, EventBindingConfiguration.class})
+@AutoConfigureBefore(FunctionConfiguration.class)
+@Import({EventBindingBeansRegistrar.class,
+    EventFunctionConfiguration.class, EventAgentConfiguration.class, EventBindingConfiguration.class})
 public @interface EnableEventBinding {
     EventProducer[] produce() default {};
     Class<?>[] listenerClass() default {};

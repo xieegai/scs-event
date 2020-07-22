@@ -195,6 +195,7 @@ public abstract class EventBindingUtils {
                     && (!bindingTypeMap.get(channelBeanName).equals(eventBindingType))) {
                     RootBeanDefinition factoryBeanDefinition
                         = buildBindingFactoryBeanDefinition(eventPayloadClass, channel, EventBindingType.BOTH, parentClass);
+                    registry.removeBeanDefinition(channelBeanName);
                     registry.registerBeanDefinition(channelBeanName, factoryBeanDefinition);
                     bindingTypeMap.put(channelBeanName, EventBindingType.BOTH);
                 }
@@ -214,6 +215,7 @@ public abstract class EventBindingUtils {
                 && (!bindingTypeMap.get(bindableBeanName).equals(eventBindingType))) {
                 RootBeanDefinition factoryBeanDefinition
                     = buildBindingFactoryBeanDefinition(eventPayloadClass, null, EventBindingType.BOTH, parentClass);
+                registry.removeBeanDefinition(bindableBeanName);
                 registry.registerBeanDefinition(bindableBeanName, factoryBeanDefinition);
                 bindingTypeMap.put(bindableBeanName, EventBindingType.BOTH);
             }

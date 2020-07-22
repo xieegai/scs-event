@@ -39,15 +39,34 @@ import com.xiaomai.event.config.adapter.EventHandlerAnnotationBeanPostProcessor;
 import com.xiaomai.event.config.adapter.EventHandlerMethodFactory;
 import com.xiaomai.event.partition.kafka.KafkaTopicPartitionRefreshJob;
 import com.xiaomai.event.lifecycle.IEventLifecycle;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionRegistry;
+import org.springframework.cloud.stream.binder.BinderConfiguration;
 import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.cloud.stream.binder.BinderType;
+import org.springframework.cloud.stream.binder.BinderTypeRegistry;
+import org.springframework.cloud.stream.binder.DefaultBinderFactory;
+import org.springframework.cloud.stream.binder.DefaultBinderFactory.Listener;
 import org.springframework.cloud.stream.binding.BindingService;
+import org.springframework.cloud.stream.config.BinderProperties;
+import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -64,6 +83,7 @@ import org.springframework.messaging.handler.annotation.support.HeadersMethodArg
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolver;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.util.Assert;
 import org.springframework.validation.Validator;
 
 import java.util.LinkedList;
@@ -77,9 +97,24 @@ public class EventBindingConfiguration {
     public static final String EVENT_HANDLER_ANNOTATION_BEAN_POST_PROCESSOR_NAME =
             "eventHandlerAnnotationBeanPostProcessor";
 
+    @Autowired(required = false)
+    private Collection<Listener> binderFactoryListeners;
+
+    @Bean("eventBinderFactory")
+    public BinderFactory binderFactory(BinderTypeRegistry binderTypeRegistry,
+        EventBindingServiceProperties bindingServiceProperties) {
+
+        DefaultBinderFactory binderFactory = new DefaultBinderFactory(
+            getBinderConfigurations(binderTypeRegistry, bindingServiceProperties),
+            binderTypeRegistry);
+        binderFactory.setDefaultBinder(bindingServiceProperties.getDefaultBinder());
+        binderFactory.setListeners(this.binderFactoryListeners);
+        return binderFactory;
+    }
+
     @Bean
     public BindingService bindingService(EventBindingServiceProperties eventBindingServiceProperties,
-                                         BinderFactory binderFactory, TaskScheduler taskScheduler) {
+                                         @Qualifier("eventBinderFactory") BinderFactory binderFactory, TaskScheduler taskScheduler) {
         return new BindingService(eventBindingServiceProperties, binderFactory, taskScheduler);
     }
 
@@ -102,10 +137,10 @@ public class EventBindingConfiguration {
 
 //    @Bean(IntegrationContextUtils.MESSAGE_HANDLER_FACTORY_BEAN_NAME)
     @Bean(name = "eventHandlerMethodFactory")
-    public static MessageHandlerMethodFactory messageHandlerMethodFactory(CompositeMessageConverterFactory compositeMessageConverterFactory,
-                                                                          @Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME) CompositeMessageConverter compositeMessageConverter,
-                                                                          @Nullable Validator validator, ConfigurableListableBeanFactory clbf,
-                                                                          IEventLifecycle eventLifecycle) {
+    public static MessageHandlerMethodFactory messageHandlerMethodFactory(
+        @Qualifier(IntegrationContextUtils.ARGUMENT_RESOLVER_MESSAGE_CONVERTER_BEAN_NAME) CompositeMessageConverter compositeMessageConverter,
+        @Nullable Validator validator, ConfigurableListableBeanFactory clbf,
+        IEventLifecycle eventLifecycle) {
         EventHandlerMethodFactory messageHandlerMethodFactory = new EventHandlerMethodFactory(eventLifecycle);
         messageHandlerMethodFactory.setMessageConverter(compositeMessageConverter);
 
@@ -150,4 +185,60 @@ public class EventBindingConfiguration {
         return messageHandlerMethodFactory;
     }
 
+    private static Map<String, BinderConfiguration> getBinderConfigurations(
+        BinderTypeRegistry binderTypeRegistry,
+        BindingServiceProperties bindingServiceProperties) {
+
+        Map<String, BinderConfiguration> binderConfigurations = new HashMap<>();
+        Map<String, BinderProperties> declaredBinders = bindingServiceProperties
+            .getBinders();
+        boolean defaultCandidatesExist = false;
+        Iterator<Entry<String, BinderProperties>> binderPropertiesIterator = declaredBinders
+            .entrySet().iterator();
+        while (!defaultCandidatesExist && binderPropertiesIterator.hasNext()) {
+            defaultCandidatesExist = binderPropertiesIterator.next().getValue()
+                .isDefaultCandidate();
+        }
+        List<String> existingBinderConfigurations = new ArrayList<>();
+        for (Map.Entry<String, BinderProperties> binderEntry : declaredBinders
+            .entrySet()) {
+            BinderProperties binderProperties = binderEntry.getValue();
+            if (binderTypeRegistry.get(binderEntry.getKey()) != null) {
+                binderConfigurations.put(binderEntry.getKey(),
+                    new BinderConfiguration(binderEntry.getKey(),
+                        binderProperties.getEnvironment(),
+                        binderProperties.isInheritEnvironment(),
+                        binderProperties.isDefaultCandidate()));
+                existingBinderConfigurations.add(binderEntry.getKey());
+            }
+            else {
+                Assert.hasText(binderProperties.getType(),
+                    "No 'type' property present for custom binder "
+                        + binderEntry.getKey());
+                binderConfigurations.put(binderEntry.getKey(),
+                    new BinderConfiguration(binderProperties.getType(),
+                        binderProperties.getEnvironment(),
+                        binderProperties.isInheritEnvironment(),
+                        binderProperties.isDefaultCandidate()));
+                existingBinderConfigurations.add(binderEntry.getKey());
+            }
+        }
+        for (Map.Entry<String, BinderConfiguration> configurationEntry : binderConfigurations
+            .entrySet()) {
+            if (configurationEntry.getValue().isDefaultCandidate()) {
+                defaultCandidatesExist = true;
+            }
+        }
+        if (!defaultCandidatesExist) {
+            for (Map.Entry<String, BinderType> binderEntry : binderTypeRegistry.getAll()
+                .entrySet()) {
+                if (!existingBinderConfigurations.contains(binderEntry.getKey())) {
+                    binderConfigurations.put(binderEntry.getKey(),
+                        new BinderConfiguration(binderEntry.getKey(), new HashMap<>(),
+                            true, "integration".equals(binderEntry.getKey()) ? false : true));
+                }
+            }
+        }
+        return binderConfigurations;
+    }
 }
