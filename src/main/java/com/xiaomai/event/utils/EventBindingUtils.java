@@ -52,9 +52,9 @@ import org.springframework.util.StringUtils;
 @SuppressWarnings("deprecation")
 public abstract class EventBindingUtils {
 
-    private static final String DOMAIN_DELIM = ".";
+    private static final String DOMAIN_DELIM = "__";
 
-    private static final String CHANNEL_DELIM = "___";
+    private static final String CHANNEL_DELIM = "-";
 
     private static String OUTPUT_MAGIC = "output@";
 
